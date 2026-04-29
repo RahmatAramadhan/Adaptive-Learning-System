@@ -13,9 +13,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Prepend global middleware untuk handle Cloudflare dan CORS lebih dulu
+        $middleware->prepend(\App\Http\Middleware\TrustProxies::class);
+        $middleware->prepend(\App\Http\Middleware\CorsMiddleware::class);
+        
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
+        
         // Izinkan React frontend mengakses API
         $middleware->statefulApi();
     })

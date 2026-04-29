@@ -33,9 +33,12 @@ class UploadController extends Controller
         }
 
         $path = $file->store($folder, 'public');
+        
+        // Generate full URL directly from config and path
+        $fullUrl = config('app.url') . '/storage/' . $path;
 
         return response()->json([
-            'url'  => Storage::disk('public')->url($path),
+            'url'  => $fullUrl,
             'path' => $path,
         ]);
     }

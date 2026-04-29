@@ -41,12 +41,22 @@ export interface AuditoryContent {
   podcastLink?: string;
 }
 
+export interface KinestheticBlock {
+  id?: string;
+  type: 'material' | 'practice-text' | 'practice-sql';
+  content?: string; // For material and practice-text
+  instructions?: string; // For practice-text and practice-sql
+  sampleSql?: string; // For practice-sql
+  sampleData?: Record<string, any[]>; // For practice-sql mock execution
+}
+
 export interface KinestheticContent {
   learningMaterial?: string; // HTML content for the theory/practical setup
   demoVideoUrl?: string; // Optional demo video for the practical
-  activityType: 'drag-drop' | 'simulation' | 'quiz';
+  activityType: 'drag-drop' | 'simulation' | 'quiz' | 'tiered-blocks';
   instructions: string; // Instructions specifically for the activity
-  items: string[]; // For drag-drop
+  items?: string[]; // For drag-drop (backward compat)
+  blocks?: KinestheticBlock[]; // For tiered content
 }
 
 export interface Evaluation {

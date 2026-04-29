@@ -165,7 +165,7 @@ export function TakeEvaluation() {
         {evaluation.questions.map((question, qIndex) => (
           <div key={question.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <div>
-              <h3 className="font-bold text-slate-900 mb-4">
+              <h3 className="font-semibold text-slate-900 mb-4 whitespace-pre-wrap text-justify">
                 {qIndex + 1}. {question.text}
               </h3>
               
@@ -179,7 +179,7 @@ export function TakeEvaluation() {
                       onChange={() => handleAnswerChange(question.id, optIndex)}
                       className="w-4 h-4 text-indigo-600 mt-0.5"
                     />
-                    <span className="text-slate-800">{option}</span>
+                    <span className="text-slate-800 whitespace-pre-wrap text-justify">{option}</span>
                   </label>
                 ))}
               </div>

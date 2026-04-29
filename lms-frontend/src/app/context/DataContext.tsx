@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Course, Evaluation, StudentProgress, UserStats } from '../types';
 import api from '../../lib/api';
+import { useAuth } from './AuthContext';
 
 interface DataContextType {
   courses: Course[];
@@ -23,6 +24,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 // ── Helper: ubah format API module ke format frontend ─────────────────────────
 function normalizeModule(m: any) {
   const content = typeof m.content === 'string' ? JSON.parse(m.content) : (m.content ?? {});
+  const kinestheticBlocks = content?.kinesthetic?.blocks ?? [];
   return {
     id: String(m.id),
     title: m.title ?? '',
@@ -39,11 +41,14 @@ function normalizeModule(m: any) {
         transcript: content?.auditory?.transcript ?? '',
       },
       kinesthetic: {
-        activityType: content?.kinesthetic?.activityType ?? 'drag-drop',
+        activityType: kinestheticBlocks.length > 0
+          ? 'tiered-blocks'
+          : (content?.kinesthetic?.activityType ?? 'drag-drop'),
         instructions: content?.kinesthetic?.instructions ?? '',
         items: content?.kinesthetic?.items ?? [],
         learningMaterial: content?.kinesthetic?.learningMaterial ?? '',
         demoVideoUrl: content?.kinesthetic?.demoVideoUrl ?? '',
+        blocks: kinestheticBlocks,
       },
     },
   };
@@ -75,11 +80,19 @@ function normalizeEvaluation(e: any): Evaluation {
 }
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
+  const { token } = useAuth();
   const [courses, setCourses]         = useState<Course[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [progress, setProgress]       = useState<StudentProgress[]>([]);
   const [stats, setStats]             = useState<UserStats | null>(null);
   const [loadingCourses, setLoading]  = useState(false);
+
+  const clearData = () => {
+    setCourses([]);
+    setEvaluations([]);
+    setProgress([]);
+    setStats(null);
+  };
 
   const fetchCourses = async () => {
     setLoading(true);
@@ -115,13 +128,27 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      fetchCourses();
-      fetchEvaluations();
-      fetchStats();
+    if (!token) {
+      clearData();
+      setLoading(false);
+      return;
     }
-  }, []);
+
+    const refreshData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          fetchCourses(),
+          fetchEvaluations(),
+          fetchStats(),
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    refreshData();
+  }, [token]);
 
   const addCourse = async (courseData: Omit<Course, 'id'>): Promise<Course> => {
     const res  = await api.post('/courses', {
@@ -151,6 +178,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     await api.put(`/courses/${courseId}/modules/${moduleId}`, moduleData);
     // Refresh courses to get updated data
     await fetchCourses();
+  };
+
+  const removeCourseFromState = (courseId: string) => {
+    setCourses(prev => prev.filter(course => course.id !== courseId));
   };
 
   const addEvaluation = async (evalData: Omit<Evaluation, 'id'>): Promise<Evaluation> => {

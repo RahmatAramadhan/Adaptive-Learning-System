@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 import { BookOpen, PlayCircle, Clock } from 'lucide-react';
 
 export function StudentDashboard() {
-  const { courses, progress, stats } = useData();
+  const { courses, progress, stats, loadingCourses } = useData();
 
   // Calculate completion percentage for each course
   const getCourseProgress = (courseId: string) => {
@@ -66,7 +66,20 @@ export function StudentDashboard() {
       {/* Courses Grid */}
       <div>
         <h2 className="text-xl font-bold text-slate-900 mb-6">Your Courses</h2>
-        {courses.length === 0 ? (
+        {loadingCourses ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="bg-white rounded-2xl border border-slate-200 p-6 animate-pulse space-y-4">
+                <div className="h-48 rounded-xl bg-slate-200" />
+                <div className="space-y-2">
+                  <div className="h-5 bg-slate-200 rounded w-3/4" />
+                  <div className="h-4 bg-slate-200 rounded w-full" />
+                  <div className="h-4 bg-slate-200 rounded w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : courses.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-slate-500">Belum ada kursus yang tersedia</p>
           </div>
@@ -93,7 +106,7 @@ export function StudentDashboard() {
                   </div>
                   <div className="p-6">
                     <h3 className="font-bold text-lg text-slate-900 mb-2 line-clamp-1">{course.title}</h3>
-                    <p className="text-slate-500 text-sm line-clamp-2 mb-4">{course.description}</p>
+                    <div className="text-slate-500 text-sm line-clamp-2 mb-4 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: course.description }} />
                     <div className="flex items-center justify-between text-xs text-slate-400 font-medium border-t border-slate-100 pt-4">
                       <span>{course.modules.length} Modules</span>
                       <span className="text-indigo-600">{courseProgress}% Complete</span>

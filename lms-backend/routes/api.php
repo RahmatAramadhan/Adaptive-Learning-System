@@ -9,6 +9,11 @@ use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\UploadController;
 use Illuminate\Support\Facades\Route;
 
+// ── Handle CORS preflight ────────────────────────────────────────────────────
+Route::options('{any}', function () {
+    return response()->json(null, 204);
+})->where('any', '.*');
+
 // ── Public routes ────────────────────────────────────────────────────────────
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
@@ -38,6 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/modules',                              [ModuleController::class, 'index']);
         Route::post('/modules',                             [ModuleController::class, 'store']);
+        Route::post('/courses/{courseId}/modules',          [ModuleController::class, 'store']);
         Route::put('/courses/{courseId}/modules/{moduleId}', [ModuleController::class, 'update']);
         Route::delete('/courses/{courseId}/modules/{moduleId}', [ModuleController::class, 'destroy']);
 

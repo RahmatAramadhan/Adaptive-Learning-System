@@ -14,7 +14,7 @@ interface StudentItem {
 
 export function TeacherDashboard() {
   const navigate = useNavigate();
-  const { courses } = useData();
+  const { courses, loadingCourses } = useData();
   const [students, setStudents] = useState<StudentItem[]>([]);
 
   useEffect(() => {
@@ -92,7 +92,16 @@ export function TeacherDashboard() {
           </button>
         </div>
 
-        {courses.length === 0 ? (
+        {loadingCourses ? (
+          <div className="grid gap-4">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="p-4 border border-slate-200 rounded-xl animate-pulse space-y-3">
+                <div className="h-5 bg-slate-200 rounded w-2/3" />
+                <div className="h-4 bg-slate-200 rounded w-1/3" />
+              </div>
+            ))}
+          </div>
+        ) : courses.length === 0 ? (
           <div className="text-center py-12">
             <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <p className="text-slate-500 mb-4">No courses yet. Create your first course!</p>

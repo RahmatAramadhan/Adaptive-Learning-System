@@ -7,7 +7,7 @@ export function Register() {
   const { register } = useAuth();
   const navigate     = useNavigate();
   const [form, setForm] = useState({
-    name: '', email: '', password: '', password_confirmation: '', role: 'siswa',
+    name: '', email: '', password: '', password_confirmation: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
@@ -20,7 +20,7 @@ export function Register() {
     }
     setLoading(true);
     try {
-      await register(form.name, form.email, form.password, form.password_confirmation, form.role);
+      await register(form.name, form.email, form.password, form.password_confirmation, 'siswa');
       toast.success('Registrasi berhasil!');
       navigate('/');
     } catch (err: any) {
@@ -76,18 +76,6 @@ export function Register() {
               className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 focus:bg-white transition-colors"
               placeholder="email@sekolah.sch.id"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
-            <select
-              value={form.role}
-              onChange={e => setForm({ ...form, role: e.target.value })}
-              className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 focus:bg-white transition-colors"
-            >
-              <option value="siswa">Siswa</option>
-              <option value="guru">Guru</option>
-            </select>
           </div>
 
           <div>

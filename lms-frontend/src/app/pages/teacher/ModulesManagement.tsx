@@ -1,57 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router';
-import { Plus, Trash2, Edit3, Book, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Edit, ArrowLeft, AlertCircle, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
+import { useData } from '../../context/DataContext';
 import api from '../../../lib/api';
-
-interface Module {
-  id: string;
-  title: string;
-  description: string;
-  course_id: string;
-  course_name: string;
-  created_at: string;
-}
 
 export function ModulesManagement() {
   const navigate = useNavigate();
-  const [modules, setModules] = useState<Module[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { courses, loadingCourses, fetchCourses } = useData();
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const modulesRes = await api.get('/modules');
-      setModules(modulesRes.data);
-    } catch (err) {
-      console.error(err);
-      toast.error('Gagal memuat data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteModule = async (courseId: string, moduleId: string) => {
-    if (!window.confirm('Yakin ingin menghapus materi ini?')) return;
+  const handleDeleteCourse = async (courseId: number) => {
+    if (!window.confirm('Yakin ingin menghapus kursus ini beserta semua modulnya?')) return;
 
     try {
-      await api.delete(`/courses/${courseId}/modules/${moduleId}`);
-      setModules(modules.filter(m => m.id !== moduleId));
-      toast.success('Materi berhasil dihapus!');
+      await api.delete(`/courses/${courseId}`);
+      toast.success('Kursus berhasil dihapus!');
+      await fetchCourses();
     } catch (err) {
       console.error(err);
-      toast.error('Gagal menghapus materi');
+      toast.error('Gagal menghapus kursus');
     }
   };
-
-  if (loading) {
-    return <div className="text-center py-12">Memuat materi...</div>;
-  }
 
   return (
     <div className="space-y-8">
@@ -71,71 +41,82 @@ export function ModulesManagement() {
           onClick={() => navigate('/teacher/add-learning')}
           className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
         >
-          <Plus className="w-5 h-5" /> Tambah Materi
+          <Plus className="w-5 h-5" /> Tambah Kursus
         </button>
       </div>
 
-      {/* Modules List */}
-      {modules.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
-          <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-600">Belum ada materi</p>
-          <p className="text-sm text-slate-500 mt-2">Mulai dengan mengklik "Tambah Materi"</p>
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {modules.map((module) => (
+      {/* Daftar Kursus */}
+      <div className="space-y-4">
+        {loadingCourses ? (
+          <div className="bg-white rounded-2xl p-12 border border-slate-200 space-y-4 animate-pulse">
+            <div className="h-6 bg-slate-200 rounded w-1/3" />
+            <div className="h-4 bg-slate-200 rounded w-1/2" />
+            <div className="h-20 bg-slate-100 rounded-xl" />
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
+            <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-600">Belum ada kursus</p>
+          </div>
+        ) : (
+          courses.map((course) => {
+            const DEFAULT_THUMBNAIL = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80';
+            const thumbnailUrl = course.thumbnail && course.thumbnail.trim() ? course.thumbnail : DEFAULT_THUMBNAIL;
+            return (
             <motion.div
-              key={module.id}
+              key={course.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              onClick={() => navigate(`/teacher/learn/${module.course_id}/${module.id}`)}
-              className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all p-6 cursor-pointer"
+              className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-indigo-300 transition-all p-6 space-y-4"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-3">
-                    <Book className="w-5 h-5 text-indigo-600" />
-                    <h3 className="text-lg font-bold text-slate-900">{module.title}</h3>
-                  </div>
-                  <p className="text-sm text-slate-600">{module.description}</p>
-                  <div className="flex items-center gap-2 pt-2">
-                    <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full">
-                      {module.course_name}
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      {new Date(module.created_at).toLocaleDateString('id-ID')}
-                    </span>
-                  </div>
+              <div className="flex gap-6 cursor-pointer" onClick={() => navigate(`/teacher/course/${course.id}`)}>
+                <div className="w-32 h-32 flex-shrink-0 rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-100 shadow-md hover:shadow-lg transition-shadow">
+                  <img
+                    src={thumbnailUrl}
+                    alt="Course thumbnail"
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_THUMBNAIL; }}
+                  />
                 </div>
-
-                <div className="flex items-center gap-2 ml-4">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/teacher/courses/${module.course_id}/learn/${module.id}/edit`);
-                    }}
-                    className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                    title="Edit materi"
-                  >
-                    <Edit3 className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteModule(module.course_id, module.id);
-                    }}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Hapus materi"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-slate-900 hover:text-indigo-600 transition-colors">{course.title}</h3>
+                  <div className="text-slate-600 mt-2 line-clamp-2 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: course.description }} />
+                  <div className="flex items-center gap-2 mt-4">
+                    <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-full">
+                      {course.modules.length} Modul
+                    </span>
+                  </div>
                 </div>
               </div>
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  onClick={() => navigate(`/teacher/add-learning/${course.id}`)}
+                  className="px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors font-semibold flex items-center gap-2"
+                  title="Edit informasi kursus"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteCourse(course.id)}
+                  className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors font-semibold flex items-center gap-2"
+                  title="Hapus kursus"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Hapus
+                </button>
+                <button
+                  onClick={() => navigate(`/teacher/course/${course.id}`)}
+                  className="px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg transition-colors font-semibold flex items-center gap-2"
+                >
+                  Lihat Detail
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </motion.div>
-          ))}
-        </div>
-      )}
+            );})
+        )}
+      </div>
     </div>
   );
 }

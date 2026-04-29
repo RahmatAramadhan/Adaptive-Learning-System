@@ -5,8 +5,26 @@ import { Play, FileText, CheckCircle, ArrowRight } from 'lucide-react';
 
 export function CourseView() {
   const { id } = useParams();
-  const { courses } = useData();
+  const { courses, loadingCourses } = useData();
   const course = courses.find(c => c.id === id);
+
+  if (loadingCourses) {
+    return (
+      <div className="space-y-8 animate-pulse">
+        <div className="h-64 rounded-3xl bg-slate-200" />
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="md:col-span-2 space-y-4">
+            <div className="h-6 bg-slate-200 rounded w-1/3" />
+            <div className="h-24 bg-slate-200 rounded-xl" />
+            <div className="h-24 bg-slate-200 rounded-xl" />
+          </div>
+          <div className="space-y-4">
+            <div className="h-40 bg-slate-200 rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!course) return <div>Course not found</div>;
 
@@ -17,7 +35,7 @@ export function CourseView() {
         <div className="absolute inset-0 bg-black/60 flex items-center p-8 md:p-12">
           <div className="max-w-2xl">
             <h1 className="text-4xl font-bold text-white mb-4">{course.title}</h1>
-            <p className="text-lg text-slate-200">{course.description}</p>
+            <div className="text-lg text-slate-200 prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: course.description }} />
           </div>
         </div>
       </div>
@@ -37,7 +55,7 @@ export function CourseView() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-slate-900 mb-1">{module.title}</h3>
-                  <p className="text-sm text-slate-500 mb-4">{module.description}</p>
+                  <div className="text-sm text-slate-500 mb-4 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: module.description }} />
                   <div className="flex items-center gap-4">
                     <Link 
                       to={`/student/learn/${course.id}/${module.id}`}

@@ -1,59 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { AuditoryContent } from '../../types';
 import { motion } from 'motion/react';
-import { Play, Pause, FastForward, Rewind, Volume2 } from 'lucide-react';
+import { Volume2 } from 'lucide-react';
+import { DdlPracticeCard } from './DdlPracticeCard';
 
 interface Props {
   content: AuditoryContent;
 }
 
 export function AuditoryLesson({ content }: Props) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-
-  useEffect(() => {
-    if (audioRef.current) {
-       // Reset when content changes
-       audioRef.current.pause();
-       setIsPlaying(false);
-       setCurrentTime(0);
-    }
-  }, [content.audioUrl]);
-
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-      setDuration(audioRef.current.duration || 0);
-    }
-  };
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = Number(e.target.value);
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setCurrentTime(time);
-    }
-  };
-
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  };
-
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -61,94 +16,62 @@ export function AuditoryLesson({ content }: Props) {
       className="space-y-8"
     >
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-8 text-white">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-              <Volume2 className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold">Audio Lesson</h3>
-              <p className="text-purple-200">Listen to the lecture content</p>
-            </div>
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-8 text-white flex items-center gap-4">
+          <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm">
+            <Volume2 className="w-7 h-7 text-white" />
           </div>
-
-          {/* Audio Player UI */}
-          <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm border border-white/10">
-            <audio 
-              ref={audioRef} 
-              src={content.audioUrl} 
-              onTimeUpdate={handleTimeUpdate}
-              onLoadedMetadata={handleTimeUpdate}
-              onEnded={() => setIsPlaying(false)}
-            />
-            
-            <div className="flex items-center justify-center gap-8 mb-6">
-               <button 
-                 onClick={() => {
-                   if (audioRef.current) audioRef.current.currentTime -= 10;
-                 }}
-                 className="p-3 hover:bg-white/10 rounded-full transition-colors text-white/80 hover:text-white"
-                >
-                  <Rewind className="w-6 h-6" />
-                </button>
-               
-               <button 
-                 onClick={togglePlay}
-                 className="w-20 h-20 bg-white text-purple-600 rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
-               >
-                 {isPlaying ? <Pause className="w-10 h-10 fill-current" /> : <Play className="w-10 h-10 fill-current ml-1" />}
-               </button>
-               
-               <button 
-                 onClick={() => {
-                   if (audioRef.current) audioRef.current.currentTime += 10;
-                 }}
-                 className="p-3 hover:bg-white/10 rounded-full transition-colors text-white/80 hover:text-white"
-                >
-                  <FastForward className="w-6 h-6" />
-                </button>
-            </div>
-            
-            <div className="space-y-2">
-              <input 
-                type="range" 
-                min="0" 
-                max={duration || 100} 
-                value={currentTime} 
-                onChange={handleSeek}
-                className="w-full h-1 bg-white/30 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full"
-              />
-              <div className="flex justify-between text-xs text-purple-200 font-medium font-mono">
-                <span>{formatTime(currentTime)}</span>
-                <span>{formatTime(duration)}</span>
-              </div>
-            </div>
+          <div>
+            <h3 className="text-2xl font-bold">🎧 Konten Audio</h3>
+            <p className="text-purple-200 text-sm">Dengarkan dan ikuti materi pembelajaran</p>
           </div>
         </div>
 
-        <div className="p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h4 className="text-lg font-bold text-slate-800">Transcript</h4>
-            <button className="text-sm font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1">
-              Download PDF
-            </button>
-          </div>
-          
+        <div className="p-8 space-y-6">
+          {/* Render HTML content with embedded audio */}
           <div 
-            className="bg-slate-50 rounded-xl p-6 border border-slate-200 max-h-[400px] overflow-y-auto font-serif text-lg leading-relaxed text-slate-700 prose prose-purple [&_p]:mb-4"
-            dangerouslySetInnerHTML={{ __html: content.transcript }}
+            className="prose prose-sm max-w-none space-y-4"
+            dangerouslySetInnerHTML={{ __html: content.transcript || '<p>Belum ada konten audio</p>' }}
+            style={{
+              color: '#475569',
+              lineHeight: '1.6',
+            }}
           />
-
-          {content.podcastLink && (
-            <div className="mt-6 p-4 bg-green-50 text-green-700 rounded-lg border border-green-200 flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-full">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
-              </div>
-              <span className="font-medium">Also available on Spotify Podcasts</span>
-            </div>
-          )}
+          
+          {/* Styling untuk audio players */}
+          <style>{`
+            .prose audio {
+              width: 100%;
+              max-width: 600px;
+              margin: 16px 0;
+              outline: none;
+              border-radius: 8px;
+            }
+            
+            .prose audio::-webkit-media-controls-panel {
+              background-color: #f1f5f9;
+            }
+            
+            .prose audio::-webkit-media-controls-mute-button {
+              cursor: pointer;
+            }
+            
+            .prose p {
+              margin: 12px 0;
+            }
+            
+            .prose p:first-child {
+              margin-top: 0;
+            }
+          `}</style>
         </div>
       </div>
+
+      <DdlPracticeCard
+        title="DDL Practice"
+        subtitle="Latihan struktur database: create, alter, rename, drop, truncate"
+        accentClassName="from-purple-600 to-indigo-600"
+        accentTextClassName="text-purple-100"
+      />
     </motion.div>
   );
 }

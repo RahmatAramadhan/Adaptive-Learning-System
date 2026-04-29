@@ -24,16 +24,26 @@ class ModuleController extends Controller
         return response()->json($modules);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, $courseId = null)
     {
+        // Handle both POST /modules (course_id in body) dan POST /courses/{id}/modules (courseId in URL)
+        $actualCourseId = $courseId ?? $request->input('course_id');
+        
         $request->validate([
-            'course_id'   => 'required|exists:courses,id',
             'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
             'content'     => 'nullable|array',
         ]);
 
-        $module = CourseModule::create($request->only(['course_id', 'title', 'description', 'content']));
+        // Verify course exists
+        Course::findOrFail($actualCourseId);
+
+        $module = CourseModule::create([
+            'course_id'   => $actualCourseId,
+            'title'       => $request->title,
+            'description' => $request->description,
+            'content'     => $request->input('content', []),
+        ]);
 
         return response()->json($module, 201);
     }

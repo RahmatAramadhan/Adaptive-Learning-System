@@ -113,7 +113,7 @@ export function EvaluationsList() {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-slate-900 mb-1">{course.title}</h3>
-                    <p className="text-sm text-slate-600 mb-4">{course.description}</p>
+                    <div className="text-sm text-slate-600 mb-4 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: course.description }} />
                     <p className="text-xs text-slate-500">{course.modules.length} modul tersedia</p>
                   </div>
                 </div>
@@ -161,7 +161,7 @@ export function EvaluationsList() {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-slate-900 mb-1">{module.title}</h3>
-                    <p className="text-sm text-slate-600">{module.description}</p>
+                    <div className="text-sm text-slate-600 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: module.description }} />
                   </div>
                   <ArrowLeft className="w-5 h-5 text-slate-400 rotate-180" />
                 </div>

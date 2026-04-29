@@ -100,7 +100,9 @@ class CourseController extends Controller
 
         $course->update($request->only(['title', 'description', 'thumbnail']));
 
-        if ($request->filled('modules') && is_array($request->modules)) {
+        // HANYA update modules jika field modules ada dan tidak kosong
+        // Ini mencegah accidental deletion saat edit course tanpa modules
+        if ($request->has('modules') && is_array($request->modules) && count($request->modules) > 0) {
             $course->modules()->delete();
             foreach ($request->modules as $mod) {
                 $course->modules()->create([

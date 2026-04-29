@@ -16,7 +16,7 @@ const styleIcons = {
 
 export function LessonView() {
   const { courseId, moduleId } = useParams();
-  const { courses, updateProgress, fetchStats } = useData();
+  const { courses, updateProgress, fetchStats, loadingCourses } = useData();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const timeSpentRef = useRef(0);
@@ -24,6 +24,22 @@ export function LessonView() {
 
   const course = courses.find(c => c.id === courseId);
   const module = course?.modules.find(m => m.id === moduleId);
+
+  if (loadingCourses) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-6 bg-slate-200 rounded w-40" />
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div className="space-y-3">
+            <div className="h-8 bg-slate-200 rounded w-72" />
+            <div className="h-5 bg-slate-200 rounded w-48" />
+          </div>
+          <div className="h-12 bg-slate-200 rounded-xl w-56" />
+        </div>
+        <div className="h-[480px] bg-slate-200 rounded-2xl" />
+      </div>
+    );
+  }
 
   // Track time spent on lesson
   useEffect(() => {

@@ -15,7 +15,7 @@ import { TeacherLessonView } from './pages/teacher/LessonView';
 import { EvaluationsList } from './pages/student/EvaluationsList';
 import { TakeEvaluation } from './pages/student/TakeEvaluation';
 import { StudentsList } from './pages/teacher/StudentsList';
-import { AddLearning } from './pages/teacher/AddLearning';
+import { AddCourse } from './pages/teacher/AddCourse';
 import { AddEvaluation } from './pages/teacher/AddEvaluation';
 import { EvaluationsManagement } from './pages/teacher/EvaluationsManagement';
 import { EditEvaluation } from './pages/teacher/EditEvaluation';
@@ -102,8 +102,8 @@ const router = createBrowserRouter([
           { path: 'course/:id',                             Component: TeacherCourseView },
           { path: 'learn/:courseId/:moduleId',              Component: TeacherLessonView },
           { path: 'students',                               Component: StudentsList },
-          { path: 'add-learning',                           Component: AddLearning },
-          { path: 'add-learning/:id',                       Component: AddLearning },
+          { path: 'add-learning',                           Component: AddCourse },
+          { path: 'add-learning/:id',                       Component: AddCourse },
           { path: 'modules',                                Component: ModulesManagement },
           { path: 'evaluations',                            Component: EvaluationsManagement },
           { path: 'evaluations/create',                     Component: AddEvaluation },
@@ -128,12 +128,12 @@ function QuestionnaireGuard() {
 
 function RootLayout() {
   return (
-    <DataProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <DataProvider>
         <Outlet />
         <Toaster richColors position="top-right" />
-      </AuthProvider>
-    </DataProvider>
+      </DataProvider>
+    </AuthProvider>
   );
 }
 

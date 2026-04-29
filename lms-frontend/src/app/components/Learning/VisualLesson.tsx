@@ -1,6 +1,7 @@
 import React from 'react';
 import { VisualContent } from '../../types';
 import { motion } from 'motion/react';
+import { DdlPracticeCard } from './DdlPracticeCard';
 
 interface Props {
   content: VisualContent;
@@ -70,6 +71,13 @@ export function VisualLesson({ content }: Props) {
           )}
         </div>
       </div>
+
+      <DdlPracticeCard
+        title="DDL Practice"
+        subtitle="Latihan struktur database: create, alter, rename, drop, truncate"
+        accentClassName="from-blue-600 to-indigo-600"
+        accentTextClassName="text-blue-100"
+      />
     </motion.div>
   );
 }

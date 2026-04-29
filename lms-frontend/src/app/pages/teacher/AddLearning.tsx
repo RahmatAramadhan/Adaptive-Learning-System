@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { useParams, useNavigate } from 'react-router';
 import { useData } from '../../context/DataContext';
@@ -248,6 +248,9 @@ export function AddLearning() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addCourse, updateCourse, courses } = useData();
+  const [isLoading, setIsLoading] = useState(false);
+  const courseId = id ? parseInt(id) : null;
+
   const { register, control, handleSubmit, reset, setValue, watch } = useForm<Course>({
     defaultValues: {
       title: '',
@@ -270,17 +273,34 @@ export function AddLearning() {
     }
   });
 
-  // Load course data saat edit
+  // Load course data saat edit - cek context dulu, kalau tidak ada fetch dari API
   useEffect(() => {
-    if (id && courses.length > 0) {
-      const course = courses.find(c => c.id === id);
-      if (course) {
-        setValue('title', course.title);
-        setValue('description', course.description);
-        setValue('modules', course.modules);
-      }
+    if (!courseId) return; // Jika tidak ada id, keluar
+
+    // Cek di context courses dulu
+    const courseFromContext = courses.find(c => c.id === courseId);
+    if (courseFromContext) {
+      setValue('title', courseFromContext.title);
+      setValue('description', courseFromContext.description);
+      setValue('modules', courseFromContext.modules);
+      setIsLoading(false);
+    } else if (courses.length > 0) {
+      // Jika tidak ada di context padahal courses sudah loaded, fetch dari API
+      setIsLoading(true);
+      api.get(`/courses/${courseId}`)
+        .then(res => {
+          const course = res.data;
+          setValue('title', course.title);
+          setValue('description', course.description);
+          setValue('modules', course.modules || []);
+        })
+        .catch(err => {
+          console.error('Failed to load course:', err);
+          toast.error('Gagal memuat data kursus.');
+        })
+        .finally(() => setIsLoading(false));
     }
-  }, [id, courses, setValue]);
+  }, [courseId, courses, setValue]);
 
   const { fields, append, remove } = useFieldArray({ control, name: 'modules' });
 
@@ -307,17 +327,17 @@ export function AddLearning() {
   };
 
   const onSubmit = async (data: Course) => {
-    const toastId = toast.loading(id ? 'Memperbarui kursus...' : 'Menyimpan kursus...');
+    const toastId = toast.loading(courseId ? 'Memperbarui kursus...' : 'Menyimpan kursus...');
     try {
-      if (id) {
-        await updateCourse(id, {
+      if (courseId) {
+        await updateCourse(courseId, {
           title: data.title,
           description: data.description,
           thumbnail: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80',
           modules: data.modules,
         });
         toast.success('Kursus berhasil diperbarui!', { id: toastId });
-        navigate(`/teacher/course/${id}`);
+        navigate(`/teacher/course/${courseId}`);
       } else {
         await addCourse({
           ...data,
@@ -339,6 +359,16 @@ export function AddLearning() {
         <p className="text-slate-500">{id ? 'Update konten pembelajaran Anda.' : 'Design adaptive content with rich text and multimedia.'}</p>
       </div>
 
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-slate-500 font-medium">Memuat data kursus...</p>
+          </div>
+        </div>
+      )}
+
+      {!isLoading && (
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         {/* Course Overview */}
         <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
@@ -533,13 +563,21 @@ export function AddLearning() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">Task Items (Comma Separated)</label>
-                        <input
-                          placeholder="e.g., SELECT, FROM, WHERE, ORDER BY"
-                          className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none bg-white"
-                          onChange={(e) => {
-                            const items = e.target.value.split(',').map((s) => s.trim()).filter(Boolean);
-                            setValue(`modules.${index}.content.kinesthetic.items`, items);
-                          }}
+                        <Controller
+                          name={`modules.${index}.content.kinesthetic.items`}
+                          control={control}
+                          render={({ field }: any) => (
+                            <input
+                              {...field}
+                              value={Array.isArray(field.value) ? field.value.join(', ') : ''}
+                              placeholder="e.g., SELECT, FROM, WHERE, ORDER BY"
+                              className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none bg-white"
+                              onChange={(e) => {
+                                const items = e.target.value.split(',').map((s) => s.trim()).filter(Boolean);
+                                field.onChange(items);
+                              }}
+                            />
+                          )}
                         />
                       </div>
                     </div>
@@ -573,6 +611,7 @@ export function AddLearning() {
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }
