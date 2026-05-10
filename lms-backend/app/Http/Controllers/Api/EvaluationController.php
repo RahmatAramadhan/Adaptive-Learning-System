@@ -29,6 +29,18 @@ class EvaluationController extends Controller
         return response()->json(Evaluation::with('questions')->findOrFail($id));
     }
 
+    public function showForStudent($id)
+    {
+        $evaluation = Evaluation::with('questions')->findOrFail($id);
+        
+        // Remove jawaban benar dari view student untuk security
+        $evaluation->questions->each(function($question) {
+            unset($question->correct_option_index);
+        });
+        
+        return response()->json($evaluation);
+    }
+
     public function store(Request $request)
     {
         $request->validate([

@@ -61,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Evaluations (siswa submit) ────────────────────────────────────────────
     Route::get('/evaluations',              [EvaluationController::class, 'index']);
+    Route::get('/evaluations/{id}/take',    [EvaluationController::class, 'showForStudent']);
     Route::get('/evaluations/{id}',         [EvaluationController::class, 'show']);
     Route::get('/courses/{courseId}/modules/{moduleId}/evaluations', [EvaluationController::class, 'indexByModule']);
     Route::post('/evaluations/{id}/submit', [EvaluationController::class, 'submitAnswer']);

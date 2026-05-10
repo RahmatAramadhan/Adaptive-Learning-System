@@ -18,7 +18,7 @@ export function TakeEvaluation() {
   useEffect(() => {
     const loadEvaluation = async () => {
       try {
-        const res = await api.get(`/evaluations/${evaluationId}`);
+        const res = await api.get(`/evaluations/${evaluationId}/take`);
         
         // Parse options if they're strings (from backend)
         const parsedQuestions = res.data.questions.map((q: any) => ({
