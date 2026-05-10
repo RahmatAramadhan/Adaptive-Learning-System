@@ -89,4 +89,61 @@ class StudentController extends Controller
             'modules_completed' => $modulesCompleted,
         ]);
     }
+
+    public function updateStudent(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $id,
+        ]);
+
+        $student = User::where('role', 'siswa')->findOrFail($id);
+        
+        $student->update([
+            'name' => $request->name,
+            'email' => $request->email,
+        ]);
+
+        return response()->json([
+            'id' => $student->id,
+            'name' => $student->name,
+            'email' => $student->email,
+            'learning_style' => $student->learningStyle?->result,
+        ]);
+    }
+
+    public function deleteStudent($id)
+    {
+        $student = User::where('role', 'siswa')->findOrFail($id);
+        
+        // Delete related data
+        StudentProgress::where('user_id', $id)->delete();
+        
+        $student->delete();
+
+        return response()->json(['message' => 'Student deleted successfully']);
+    }
+
+    public function storeStudent(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8',
+        ]);
+
+        $student = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'role' => 'siswa',
+        ]);
+
+        return response()->json([
+            'id' => $student->id,
+            'name' => $student->name,
+            'email' => $student->email,
+            'learning_style' => null,
+        ], 201);
+    }
 }

@@ -27,13 +27,14 @@ export function EditEvaluation() {
   const [modules, setModules] = useState<ModuleOption[]>([]);
   const formInitializedRef = useRef(false);
 
-  const { register, control, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<Evaluation>();
+  const { register, control, handleSubmit, reset, watch, setValue, formState: { errors }, getValues } = useForm<Evaluation>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: "questions"
   });
 
   const courseId = watch('courseId');
+  const questionValues = watch('questions');
 
   // Load courses first
   useEffect(() => {
@@ -60,15 +61,19 @@ export function EditEvaluation() {
         // Transform snake_case to camelCase and parse options if they're strings
         const transformedData = {
           ...res.data,
-          courseId: res.data.course_id,
-          moduleId: res.data.module_id,
+          courseId: String(res.data.course_id),
+          moduleId: String(res.data.module_id),
           title: res.data.title,
-          questions: res.data.questions.map((q: any) => ({
-            id: q.id,
-            text: q.text,
-            correctOptionIndex: q.correct_option_index,
-            options: typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || [])
-          }))
+          questions: res.data.questions.map((q: any) => {
+            const correctIndex = String(q.correct_option_index);
+            console.log(`Question ${q.id}: correctOptionIndex = ${correctIndex}, type: ${typeof correctIndex}`);
+            return {
+              id: q.id,
+              text: q.text,
+              correctOptionIndex: correctIndex,
+              options: typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || [])
+            };
+          })
         };
         
         console.log('Transformed evaluation:', transformedData);
@@ -94,6 +99,16 @@ export function EditEvaluation() {
     console.log('Setting courseId:', evaluation.courseId);
     setValue('courseId', String(evaluation.courseId));
   }, [evaluation, courses, setValue]);
+
+  // Log question values for debugging
+  useEffect(() => {
+    if (questionValues && questionValues.length > 0) {
+      console.log('Current question values:', questionValues);
+      questionValues.forEach((q, idx) => {
+        console.log(`Q${idx}: correctOptionIndex = ${q.correctOptionIndex}, type: ${typeof q.correctOptionIndex}`);
+      });
+    }
+  }, [questionValues]);
 
   // Load modules when course changes
   useEffect(() => {
@@ -153,7 +168,7 @@ export function EditEvaluation() {
         questions: data.questions.map((q: Question) => ({
           text: q.text,
           options: q.options,
-          correctOptionIndex: q.correctOptionIndex
+          correctOptionIndex: Number(q.correctOptionIndex)
         }))
       };
 
@@ -258,7 +273,7 @@ export function EditEvaluation() {
                     <div key={optIndex} className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
                       <input 
                         type="radio" 
-                        value={optIndex}
+                        value={String(optIndex)}
                         {...register(`questions.${index}.correctOptionIndex` as const)}
                         className="w-4 h-4 text-indigo-600 mt-1 cursor-pointer"
                       />

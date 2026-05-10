@@ -127,7 +127,7 @@ export function AddEvaluation() {
         questions: data.questions.map((q: Question) => ({
           text: q.text,
           options: q.options,
-          correctOptionIndex: q.correctOptionIndex
+          correctOptionIndex: Number(q.correctOptionIndex)
         }))
       };
 
@@ -227,7 +227,7 @@ export function AddEvaluation() {
                     <div key={optIndex} className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
                       <input 
                         type="radio" 
-                        value={optIndex}
+                        value={String(optIndex)}
                         {...register(`questions.${index}.correctOptionIndex` as const, { required: true })}
                         className="w-4 h-4 text-indigo-600 mt-1 cursor-pointer"
                       />

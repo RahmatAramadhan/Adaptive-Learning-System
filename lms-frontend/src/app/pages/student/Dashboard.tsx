@@ -2,6 +2,7 @@ import React from 'react';
 import { useData } from '../../context/DataContext';
 import { Link } from 'react-router';
 import { BookOpen, PlayCircle, Clock } from 'lucide-react';
+import { AlertBanner } from '../../components/AlertBanner';
 
 export function StudentDashboard() {
   const { courses, progress, stats, loadingCourses } = useData();
@@ -14,8 +15,22 @@ export function StudentDashboard() {
     return Math.round((completed / courseProgress.length) * 100);
   };
 
+  // Check if student has started any courses (no progress yet)
+  const hasStartedLearning = progress.length > 0;
+
   return (
     <div className="space-y-8">
+      {/* Guidance Banner for New Students */}
+      {!hasStartedLearning && (
+        <AlertBanner
+          type="info"
+          title="🚀 Memulai Pembelajaran"
+          message="Silahkan pilih salah satu course di bawah ini dan masuk untuk melanjutkan pembelajaran Anda sesuai dengan gaya belajar yang telah ditentukan."
+          dismissible={true}
+          storageKey="student-guidance-banner"
+        />
+      )}
+
       <div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome back!</h1>
         <p className="text-slate-500">Pick up where you left off in your learning journey.</p>

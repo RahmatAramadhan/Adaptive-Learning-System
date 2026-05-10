@@ -53,7 +53,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/evaluations/{id}/student-results', [EvaluationController::class, 'getStudentResults']);
 
         Route::get('/students',              [StudentController::class, 'index']);
+        Route::post('/students',             [StudentController::class, 'storeStudent']);
         Route::get('/students/{id}/progress', [StudentController::class, 'progress']);
+        Route::put('/students/{id}',         [StudentController::class, 'updateStudent']);
+        Route::delete('/students/{id}',      [StudentController::class, 'deleteStudent']);
     });
 
     // ── Evaluations (siswa submit) ────────────────────────────────────────────
