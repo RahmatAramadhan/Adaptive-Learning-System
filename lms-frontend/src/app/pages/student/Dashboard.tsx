@@ -1,11 +1,24 @@
 import React from 'react';
 import { useData } from '../../context/DataContext';
 import { Link } from 'react-router';
-import { BookOpen, PlayCircle, Clock } from 'lucide-react';
+import { BookOpen, PlayCircle, Clock, Eye, Headphones, Hand } from 'lucide-react';
 import { AlertBanner } from '../../components/AlertBanner';
+import { useAuth } from '../../context/AuthContext';
+
+const styleIcons = {
+  visual: { icon: Eye, label: 'Visual', color: 'from-blue-500 to-blue-600' },
+  auditori: { icon: Headphones, label: 'Auditory', color: 'from-purple-500 to-purple-600' },
+  kinestetik: { icon: Hand, label: 'Kinesthetic', color: 'from-orange-500 to-orange-600' },
+};
 
 export function StudentDashboard() {
   const { courses, progress, stats, loadingCourses } = useData();
+
+  const { currentUser } = useAuth();
+
+  const studentStyle = (currentUser?.learning_style?.result || 'visual') as keyof typeof styleIcons;
+  const styleInfo = styleIcons[studentStyle];
+  const StyleIcon = styleInfo.icon;
 
   // Calculate completion percentage for each course
   const getCourseProgress = (courseId: string) => {
@@ -31,9 +44,33 @@ export function StudentDashboard() {
         />
       )}
 
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome back!</h1>
-        <p className="text-slate-500">Pick up where you left off in your learning journey.</p>
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+        {/* Welcome */}
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            Welcome back!
+          </h1>
+          <p className="text-slate-500">
+            Pick up where you left off in your learning journey.
+          </p>
+        </div>
+
+        {/* Learning Style Badge */}
+        <div
+          className={`bg-gradient-to-r ${styleInfo.color} text-white px-4 py-3 rounded-xl shadow-md whitespace-nowrap`}
+        >
+          <div className="flex items-center gap-2">
+            <StyleIcon className="w-5 h-5" />
+            <div>
+              <p className="text-xs font-medium opacity-90">
+                Your Learning Style
+              </p>
+              <p className="text-sm font-bold">
+                {styleInfo.label}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Progress Overview */}
