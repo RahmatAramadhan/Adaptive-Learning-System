@@ -45,7 +45,7 @@ export function Register() {
             <span className="text-white text-2xl font-bold">L</span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Buat Akun Baru</h1>
-          <p className="text-slate-500 text-sm">LMS Adaptif — Sistem Gaya Belajar</p>
+          <p className="text-slate-500 text-sm">Media Pembelajaran Adaptif</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

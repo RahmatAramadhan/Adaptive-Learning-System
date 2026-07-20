@@ -34,9 +34,9 @@ export function Login() {
         {/* Logo / Header */}
         <div className="text-center space-y-2">
           <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto">
-            <span className="text-white text-2xl font-bold">L</span>
+            <span className="text-white text-2xl font-bold">P</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Masuk ke LMS Adaptif</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Masuk ke Media Pembelajaran Adaptif</h1>
           <p className="text-slate-500 text-sm">Sistem Pembelajaran Gaya Belajar</p>
         </div>
 

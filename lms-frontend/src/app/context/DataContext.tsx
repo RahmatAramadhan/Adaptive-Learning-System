@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Course, Evaluation, StudentProgress, UserStats } from '../types';
+import { AuditoryBlock, Course, Evaluation, KinestheticBlock, StudentProgress, UserStats, VisualBlock } from '../types';
 import api from '../../lib/api';
 import { useAuth } from './AuthContext';
 
@@ -24,6 +24,8 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 // ── Helper: ubah format API module ke format frontend ─────────────────────────
 function normalizeModule(m: any) {
   const content = typeof m.content === 'string' ? JSON.parse(m.content) : (m.content ?? {});
+  const visualBlocks = content?.visual?.blocks ?? [];
+  const auditoryBlocks = content?.auditory?.blocks ?? [];
   const kinestheticBlocks = content?.kinesthetic?.blocks ?? [];
   return {
     id: String(m.id),
@@ -35,10 +37,12 @@ function normalizeModule(m: any) {
         images: content?.visual?.images ?? [],
         diagrams: content?.visual?.diagrams ?? [],
         videoUrl: content?.visual?.videoUrl ?? '',
+        blocks: visualBlocks.length > 0 ? visualBlocks : buildLegacyVisualBlocks(content?.visual),
       },
       auditory: {
         audioUrl: content?.auditory?.audioUrl ?? '',
         transcript: content?.auditory?.transcript ?? '',
+        blocks: auditoryBlocks.length > 0 ? auditoryBlocks : buildLegacyAuditoryBlocks(content?.auditory),
       },
       kinesthetic: {
         activityType: kinestheticBlocks.length > 0
@@ -48,10 +52,155 @@ function normalizeModule(m: any) {
         items: content?.kinesthetic?.items ?? [],
         learningMaterial: content?.kinesthetic?.learningMaterial ?? '',
         demoVideoUrl: content?.kinesthetic?.demoVideoUrl ?? '',
-        blocks: kinestheticBlocks,
+        blocks: kinestheticBlocks.length > 0 ? kinestheticBlocks : buildLegacyKinestheticBlocks(content?.kinesthetic),
       },
     },
   };
+}
+
+function buildLegacyVisualBlocks(visual?: {
+  text?: string;
+  images?: string[];
+  diagrams?: string[];
+  videoUrl?: string;
+}): any[] {
+  const blocks: any[] = [];
+
+  if (visual?.text) {
+    blocks.push({
+      id: 'legacy-visual-text',
+      section: 1,
+      type: 'material',
+      title: 'Materi Utama',
+      content: visual.text,
+    });
+  }
+
+  if (visual?.videoUrl) {
+    blocks.push({
+      id: 'legacy-visual-video',
+      section: 1,
+      type: 'video',
+      title: 'Video Pendukung',
+      url: visual.videoUrl,
+    });
+  }
+
+  if (visual?.images?.length) {
+    blocks.push({
+      id: 'legacy-visual-images',
+      section: 1,
+      type: 'image',
+      title: 'Gambar Pendukung',
+      urls: visual.images,
+    });
+  }
+
+  if (visual?.diagrams?.length) {
+    blocks.push({
+      id: 'legacy-visual-diagrams',
+      section: 1,
+      type: 'diagram',
+      title: 'Diagram Pendukung',
+      urls: visual.diagrams,
+    });
+  }
+
+  if (blocks.length === 0) {
+    blocks.push({
+      id: 'legacy-visual-empty',
+      section: 1,
+      type: 'material',
+      title: 'Materi Visual',
+      content: 'Belum ada konten visual. Tambahkan block baru untuk mulai menyusun materi.',
+    });
+  }
+
+  return blocks;
+}
+
+function buildLegacyAuditoryBlocks(auditory?: {
+  transcript?: string;
+  audioUrl?: string;
+}): AuditoryBlock[] {
+  const blocks: AuditoryBlock[] = [];
+
+  if (auditory?.transcript) {
+    blocks.push({
+      id: 'legacy-auditory-material',
+      section: 1,
+      type: 'material',
+      title: 'Materi Audio',
+      content: auditory.transcript,
+    });
+  }
+
+  if (auditory?.audioUrl) {
+    blocks.push({
+      id: 'legacy-auditory-audio',
+      section: 1,
+      type: 'audio',
+      title: 'Audio Pendukung',
+      url: auditory.audioUrl,
+    });
+  }
+
+  if (blocks.length === 0) {
+    blocks.push({
+      id: 'legacy-auditory-empty',
+      section: 1,
+      type: 'material',
+      title: 'Materi Audio',
+      content: 'Belum ada konten audio. Tambahkan block baru untuk mulai menyusun materi.',
+    });
+  }
+
+  return blocks;
+}
+
+function buildLegacyKinestheticBlocks(kinesthetic?: {
+  learningMaterial?: string;
+  instructions?: string;
+  items?: string[];
+  blocks?: KinestheticBlock[];
+}): KinestheticBlock[] {
+  if (kinesthetic?.blocks?.length) {
+    return kinesthetic.blocks;
+  }
+
+  const blocks: KinestheticBlock[] = [];
+
+  if (kinesthetic?.learningMaterial) {
+    blocks.push({
+      id: 'legacy-kinesthetic-material',
+      section: 1,
+      type: 'material',
+      content: kinesthetic.learningMaterial,
+    });
+  }
+
+  if (kinesthetic?.instructions || (kinesthetic?.items && kinesthetic.items.length > 0)) {
+    blocks.push({
+      id: 'legacy-kinesthetic-practice',
+      section: 1,
+      type: 'practice-text',
+      instructions: kinesthetic?.instructions || 'Kerjakan latihan berikut',
+      content: kinesthetic?.items && kinesthetic.items.length > 0
+        ? `Susun atau baca item berikut: ${kinesthetic.items.join(', ')}`
+        : 'Latihan interaktif akan muncul di sini setelah blok baru dibuat.',
+    });
+  }
+
+  if (blocks.length === 0) {
+    blocks.push({
+      id: 'legacy-kinesthetic-empty',
+      section: 1,
+      type: 'material',
+      content: 'Konten kinestetik lama belum punya blok berjenjang. Silakan tambah block baru.',
+    });
+  }
+
+  return blocks;
 }
 
 function normalizeCourse(c: any): Course {

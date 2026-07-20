@@ -58,6 +58,14 @@ export function StudentResultsReview() {
     ? ((passCount / results.length) * 100).toFixed(1)
     : 0;
 
+  const getCalculatedCorrect = (score: number, total: number) => {
+    if (total <= 0) {
+      return 0;
+    }
+
+    return Math.round((score / 100) * total);
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       <button 
@@ -121,6 +129,7 @@ export function StudentResultsReview() {
             <tbody>
               {results.map((result, idx) => {
                 const isPassing = parseFloat(String(result.score)) >= 60;
+                const calculatedCorrect = getCalculatedCorrect(Number(result.score), Number(result.total));
                 return (
                   <tr key={idx} className="border-b border-slate-200 hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 text-sm font-medium text-slate-900">{result.userName}</td>
@@ -128,7 +137,7 @@ export function StudentResultsReview() {
                       {parseFloat(String(result.score)).toFixed(1)}%
                     </td>
                     <td className="px-6 py-4 text-right text-sm text-slate-600">
-                      {result.correct}/{result.total}
+                      {calculatedCorrect}/{result.total}
                     </td>
                     <td className="px-6 py-4 text-right text-sm text-slate-600">
                       {new Date(result.submitted_at).toLocaleDateString('id-ID', {

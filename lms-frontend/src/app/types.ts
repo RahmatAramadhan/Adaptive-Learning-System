@@ -28,26 +28,63 @@ export interface Module {
   };
 }
 
+export interface VisualBlock {
+  id?: string;
+  section?: number;
+  type: 'material' | 'video' | 'image' | 'diagram' | 'quiz';
+  title?: string;
+  content?: string;
+  url?: string;
+  urls?: string[];
+  questions?: VisualQuizQuestion[];
+}
+
+export interface VisualQuizQuestion {
+  text: string;
+  options: string[];
+  correctOptionIndex: number;
+}
+
+export interface QuizQuestion {
+  text: string;
+  options: string[];
+  correctOptionIndex: number;
+}
+
 export interface VisualContent {
   videoUrl?: string;
   images: string[];
   diagrams: string[];
   text: string;
+  blocks?: VisualBlock[];
+}
+
+export interface AuditoryBlock {
+  id?: string;
+  section?: number;
+  type: 'material' | 'audio' | 'quiz';
+  title?: string;
+  content?: string;
+  url?: string;
+  questions?: QuizQuestion[];
 }
 
 export interface AuditoryContent {
   audioUrl: string;
   transcript: string;
   podcastLink?: string;
+  blocks?: AuditoryBlock[];
 }
 
 export interface KinestheticBlock {
   id?: string;
-  type: 'material' | 'practice-text' | 'practice-sql';
+  section?: number;
+  type: 'material' | 'practice-text' | 'practice-sql' | 'quiz';
   content?: string; // For material and practice-text
   instructions?: string; // For practice-text and practice-sql
   sampleSql?: string; // For practice-sql
   sampleData?: Record<string, any[]>; // For practice-sql mock execution
+  questions?: QuizQuestion[];
 }
 
 export interface KinestheticContent {

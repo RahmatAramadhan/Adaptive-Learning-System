@@ -54,7 +54,7 @@ export function Questionnaire() {
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold text-slate-900">Kuesioner Gaya Belajar</h1>
-          <p className="text-slate-500">Jawab {total} pertanyaan berikut dengan jujur untuk menemukan gaya belajar terbaikmu (VAK).</p>
+          <p className="text-slate-500">Jawab {total} pertanyaan berikut dengan jujur untuk menemukan gaya belajar yang sesuai.</p>
           <div className="w-full bg-slate-200 rounded-full h-2 mt-4">
             <div
               className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
@@ -102,7 +102,7 @@ export function Questionnaire() {
             disabled={loading || answered < total}
             className="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200"
           >
-            {loading ? 'Memproses...' : 'Lihat Hasil Gaya Belajar Saya →'}
+            {loading ? 'Memproses...' : 'Submit Kuesioner →'}
           </button>
         </form>
       </div>

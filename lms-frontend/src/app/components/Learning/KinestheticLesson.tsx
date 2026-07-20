@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { KinestheticContent, KinestheticBlock } from '../../types';
+import React, { useEffect, useMemo, useState } from 'react';
+import { KinestheticContent, KinestheticBlock, QuizQuestion } from '../../types';
 import { Reorder, motion } from 'motion/react';
 import { Hand, CheckCircle2, RotateCcw, BookOpen, PlayCircle, Code2, Play } from 'lucide-react';
 import { executeSqlMock, SqlExecutionResult } from '@/app/utils/sqlMock';
@@ -21,19 +21,38 @@ interface DdlSchemaTable {
 }
 
 export function KinestheticLesson({ content }: Props) {
-  // Check if new tiered format
-  if (Array.isArray(content.blocks) && content.blocks.length > 0) {
-    return <TieredKinestheticLesson blocks={content.blocks} />;
-  }
+  const sections = useMemo(() => buildSections(content), [content]);
 
-  const legacyBlocks = buildLegacyBlocks(content);
-
-  if (legacyBlocks.length > 0) {
-    return <TieredKinestheticLesson blocks={legacyBlocks} />;
+  if (sections.length > 0) {
+    return <SectionedKinestheticLesson sections={sections} />;
   }
 
   // Old format - existing drag-drop code
   return <DragDropKinestheticLesson content={content} />;
+}
+
+type KinestheticSection = {
+  sectionNumber: number;
+  blocks: KinestheticBlock[];
+};
+
+function buildSections(content: KinestheticContent): KinestheticSection[] {
+  const blocks = Array.isArray(content.blocks) && content.blocks.length > 0
+    ? content.blocks
+    : buildLegacyBlocks(content);
+
+  const grouped = new Map<number, KinestheticBlock[]>();
+
+  blocks.forEach((block) => {
+    const sectionNumber = Math.max(1, block.section || 1);
+    const existing = grouped.get(sectionNumber) || [];
+    existing.push(block);
+    grouped.set(sectionNumber, existing);
+  });
+
+  return Array.from(grouped.entries())
+    .sort(([left], [right]) => left - right)
+    .map(([sectionNumber, sectionBlocks]) => ({ sectionNumber, blocks: sectionBlocks }));
 }
 
 function buildLegacyBlocks(content: KinestheticContent): KinestheticBlock[] {
@@ -42,6 +61,7 @@ function buildLegacyBlocks(content: KinestheticContent): KinestheticBlock[] {
   if (content.learningMaterial) {
     blocks.push({
       id: 'legacy-material',
+      section: 1,
       type: 'material',
       content: content.learningMaterial,
     });
@@ -50,6 +70,7 @@ function buildLegacyBlocks(content: KinestheticContent): KinestheticBlock[] {
   if (content.instructions || (content.items && content.items.length > 0)) {
     blocks.push({
       id: 'legacy-practice',
+      section: 1,
       type: 'practice-text',
       instructions: content.instructions || 'Kerjakan latihan berikut',
       content: content.items && content.items.length > 0
@@ -61,12 +82,289 @@ function buildLegacyBlocks(content: KinestheticContent): KinestheticBlock[] {
   if (blocks.length === 0) {
     blocks.push({
       id: 'legacy-empty',
+      section: 1,
       type: 'material',
       content: 'Konten kinestetik belum dikonfigurasi dalam format berjenjang. Silakan perbarui modul ini dari editor guru.',
     });
   }
 
   return blocks;
+}
+
+function SectionedKinestheticLesson({ sections }: { sections: KinestheticSection[] }) {
+  const [activeSectionIndex, setActiveSectionIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, Record<number, number>>>({});
+  const [passedSections, setPassedSections] = useState<Record<string, boolean>>({});
+  const [sectionFeedback, setSectionFeedback] = useState<Record<string, { type: 'success' | 'error'; message: string }>>({});
+  const currentSection = sections[activeSectionIndex];
+  const currentSectionPassed = !hasQuiz(currentSection) || Boolean(passedSections[String(activeSectionIndex)]);
+  const hasNextSection = activeSectionIndex < sections.length - 1;
+
+  const goToNextSection = () => {
+    setActiveSectionIndex((current) => Math.min(sections.length - 1, current + 1));
+  };
+
+  useEffect(() => {
+    const current = sections[activeSectionIndex];
+    if (!current || hasQuiz(current)) {
+      return;
+    }
+
+    setPassedSections((state) => {
+      const key = String(activeSectionIndex);
+      if (state[key]) {
+        return state;
+      }
+
+      return { ...state, [key]: true };
+    });
+  }, [activeSectionIndex, sections]);
+
+  return (
+    <motion.div className="space-y-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-8 border-b border-slate-100 space-y-5">
+          <h3 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+            <span className="p-2 bg-orange-100 text-orange-600 rounded-lg">
+              <Hand className="w-6 h-6" />
+            </span>
+            Kinesthetic Sections
+          </h3>
+          <p className="text-slate-500">Materi kinestetik dipisahkan per section. Kerjakan quiz di setiap section untuk membuka section berikutnya.</p>
+
+          <div className="flex flex-wrap gap-2">
+            {sections.map((section, index) => {
+              const isActive = index === activeSectionIndex;
+              const isLocked = index > activeSectionIndex && !passedSections[String(index - 1)];
+
+              return (
+                <button
+                  key={section.sectionNumber}
+                  type="button"
+                  onClick={() => {
+                    if (index <= activeSectionIndex || !isLocked) {
+                      setActiveSectionIndex(index);
+                    }
+                  }}
+                  className={[
+                    'px-4 py-2 rounded-full text-sm font-semibold border transition-all',
+                    isActive
+                      ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
+                      : isLocked
+                        ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                        : 'bg-white text-slate-700 border-slate-200 hover:border-orange-300 hover:text-orange-600',
+                  ].join(' ')}
+                  disabled={isLocked}
+                >
+                  Section {section.sectionNumber}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-6 p-8">
+          {currentSection && renderSection(
+            currentSection,
+            activeSectionIndex,
+            answers,
+            setAnswers,
+            passedSections,
+            setPassedSections,
+            sectionFeedback,
+            setSectionFeedback,
+            hasNextSection,
+            goToNextSection
+          )}
+
+          <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setActiveSectionIndex((current) => Math.max(0, current - 1))}
+              disabled={activeSectionIndex === 0}
+              className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+            >
+              Prev
+            </button>
+
+            <div className="text-sm text-slate-500">
+              {currentSectionPassed ? 'Section ini sudah lulus quiz.' : 'Selesaikan quiz untuk lanjut.'}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setActiveSectionIndex((current) => Math.min(sections.length - 1, current + 1))}
+              disabled={!hasNextSection || !currentSectionPassed}
+              className="px-4 py-2 rounded-lg bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-700"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function hasQuiz(section: KinestheticSection | undefined): boolean {
+  return Boolean(section?.blocks.some((block) => block.type === 'quiz' && (block.questions?.length || 0) > 0));
+}
+
+function renderSection(
+  section: KinestheticSection,
+  index: number,
+  answers: Record<string, Record<number, number>>,
+  setAnswers: React.Dispatch<React.SetStateAction<Record<string, Record<number, number>>>>,
+  passedSections: Record<string, boolean>,
+  setPassedSections: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+  sectionFeedback: Record<string, { type: 'success' | 'error'; message: string }>,
+  setSectionFeedback: React.Dispatch<React.SetStateAction<Record<string, { type: 'success' | 'error'; message: string }>>>,
+  hasNextSection: boolean,
+  goToNextSection: () => void
+) {
+  const quizBlock = section.blocks.find((block) => block.type === 'quiz');
+  const sectionId = String(index);
+  const sectionAnswers = answers[sectionId] || {};
+  const quiz = quizBlock?.questions || [];
+  const answeredCount = quiz.filter((question, questionIndex) => sectionAnswers[questionIndex] !== undefined).length;
+
+  const evaluateQuiz = () => {
+    if (!quiz.length) return;
+
+    const correctCount = quiz.reduce((total, question, questionIndex) => {
+      return total + (sectionAnswers[questionIndex] === question.correctOptionIndex ? 1 : 0);
+    }, 0);
+
+    const score = (correctCount / quiz.length) * 100;
+    if (score >= 70) {
+      setPassedSections((current) => ({ ...current, [sectionId]: true }));
+      setSectionFeedback((current) => ({
+        ...current,
+        [sectionId]: {
+          type: 'success',
+          message: `Jawaban benar. Skor kamu ${score.toFixed(0)}%. Section ini sudah terbuka.`,
+        },
+      }));
+
+      if (hasNextSection) {
+        goToNextSection();
+      }
+      return;
+    }
+
+    setSectionFeedback((current) => ({
+      ...current,
+      [sectionId]: {
+        type: 'error',
+        message: `Jawaban masih salah. Skor kamu ${score.toFixed(0)}%. Coba lagi sebelum lanjut ke section berikutnya.`,
+      },
+    }));
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-5">
+        {section.blocks
+          .filter((block) => block.type !== 'quiz')
+          .map((block, blockIndex) => renderKinestheticBlock(block, blockIndex))}
+      </div>
+
+      {quizBlock && quiz.length > 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">Evaluasi Section {section.sectionNumber}</p>
+            <h4 className="text-xl font-bold text-slate-900 mt-1">{quizBlock.title || 'Quiz singkat'}</h4>
+            <p className="text-sm text-slate-500 mt-1">Jawab semua pertanyaan untuk membuka section berikutnya.</p>
+          </div>
+
+          <div className="space-y-4">
+            {quiz.map((question, questionIndex) => (
+              <div key={questionIndex} className="rounded-lg border border-slate-200 p-4 space-y-3 bg-slate-50/80">
+                <p className="font-semibold text-slate-900">{questionIndex + 1}. {question.text}</p>
+                <div className="space-y-2">
+                  {question.options.map((option, optionIndex) => (
+                    <label key={optionIndex} className="flex items-start gap-3 p-3 rounded-lg bg-white border border-transparent hover:border-indigo-200 cursor-pointer transition-colors">
+                      <input
+                        type="radio"
+                        name={`kinesthetic-${sectionId}-q-${questionIndex}`}
+                        checked={sectionAnswers[questionIndex] === optionIndex}
+                        onChange={() => setAnswers((current) => ({
+                          ...current,
+                          [sectionId]: {
+                            ...(current[sectionId] || {}),
+                            [questionIndex]: optionIndex,
+                          },
+                        }))}
+                        className="mt-1 h-4 w-4 text-indigo-600"
+                      />
+                      <span className="text-slate-800">{option}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between gap-4 pt-2">
+            <p className="text-sm text-slate-600">Terjawab: <span className="font-semibold text-indigo-600">{answeredCount}/{quiz.length}</span></p>
+            <button
+              type="button"
+              onClick={evaluateQuiz}
+              disabled={answeredCount < quiz.length || passedSections[sectionId]}
+              className="px-4 py-2 rounded-lg bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-700"
+            >
+              {passedSections[sectionId] ? 'Sudah Lulus' : 'Cek Jawaban'}
+            </button>
+          </div>
+
+          {sectionFeedback[sectionId] && (
+            <div className={[
+              'rounded-lg border p-4 text-sm font-medium',
+              sectionFeedback[sectionId].type === 'success'
+                ? 'border-green-200 bg-green-50 text-green-700'
+                : 'border-red-200 bg-red-50 text-red-700',
+            ].join(' ')}>
+              {sectionFeedback[sectionId].message}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!quizBlock && (
+        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+          Section ini belum punya evaluasi. Tombol Next akan terbuka otomatis.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function renderKinestheticBlock(block: KinestheticBlock, index: number) {
+  if (block.type === 'material') {
+    return (
+      <div key={block.id || index} className="motion-safe:animate-[fadeIn_0.2s_ease-out]">
+        <MaterialBlock content={block.content} />
+      </div>
+    );
+  }
+
+  if (block.type === 'practice-text') {
+    return (
+      <div key={block.id || index} className="motion-safe:animate-[fadeIn_0.2s_ease-out]">
+        <PracticeTextBlock block={block} />
+      </div>
+    );
+  }
+
+  if (block.type === 'practice-sql') {
+    return (
+      <div key={block.id || index} className="motion-safe:animate-[fadeIn_0.2s_ease-out]">
+        <PracticeSqlBlock block={block} />
+      </div>
+    );
+  }
+
+  return null;
 }
 
 function TieredKinestheticLesson({ blocks }: { blocks: KinestheticBlock[] }) {

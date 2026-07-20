@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useData } from '../../context/DataContext';
-import { Course, Module, KinestheticBlock } from '../../types';
+import { AuditoryBlock, Course, Module, KinestheticBlock, VisualBlock, VisualQuizQuestion } from '../../types';
 import { ArrowLeft, Save, Video, Music, Upload, PlayCircle, Image as ImageIcon, Trash2, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
 import ReactQuill, { Quill } from 'react-quill';
@@ -306,6 +306,8 @@ export function TeacherEditModule({ course, module, onClose, isCreating = false 
     visualImages: [] as string[],
     visualDiagrams: [] as string[],
     visualVideoUrl: '',
+    visualBlocks: [] as VisualBlock[],
+    auditoryBlocks: [] as AuditoryBlock[],
     auditoryTranscript: '',
     kinestheticActivityType: 'tiered-blocks' as const,
     kinestheticInstructions: 'Kerjakan latihan kinestetik berikut',
@@ -313,6 +315,191 @@ export function TeacherEditModule({ course, module, onClose, isCreating = false 
     kinestheticLearningMaterial: '',
     kinestheticDemoVideoUrl: '',
   };
+
+  function buildLegacyVisualBlocks(visual?: {
+    text?: string;
+    images?: string[];
+    diagrams?: string[];
+    videoUrl?: string;
+    blocks?: VisualBlock[];
+  }): VisualBlock[] {
+    if (visual?.blocks?.length) {
+      return visual.blocks;
+    }
+
+    const blocks: VisualBlock[] = [];
+
+    if (visual?.text) {
+      blocks.push({
+        id: 'legacy-visual-text',
+        section: 1,
+        type: 'material',
+        title: 'Materi Utama',
+        content: visual.text,
+      });
+    }
+
+    if (visual?.videoUrl) {
+      blocks.push({
+        id: 'legacy-visual-video',
+        section: 1,
+        type: 'video',
+        title: 'Video Pendukung',
+        url: visual.videoUrl,
+      });
+    }
+
+    if (visual?.images?.length) {
+      blocks.push({
+        id: 'legacy-visual-images',
+        section: 1,
+        type: 'image',
+        title: 'Gambar Pendukung',
+        urls: visual.images,
+      });
+    }
+
+    if (visual?.diagrams?.length) {
+      blocks.push({
+        id: 'legacy-visual-diagrams',
+        section: 1,
+        type: 'diagram',
+        title: 'Diagram Pendukung',
+        urls: visual.diagrams,
+      });
+    }
+
+    if (blocks.length === 0) {
+      blocks.push({
+        id: 'legacy-visual-empty',
+        section: 1,
+        type: 'material',
+        title: 'Materi Visual',
+        content: 'Belum ada konten visual. Tambahkan block baru untuk mulai menyusun materi.',
+      });
+    }
+
+    return blocks;
+  }
+
+  function createEmptyVisualQuestion(): VisualQuizQuestion {
+    return {
+      text: '',
+      options: ['', ''],
+      correctOptionIndex: 0,
+    };
+  }
+
+  function updateVisualQuestion(
+    questions: VisualQuizQuestion[],
+    questionIndex: number,
+    patch: Partial<VisualQuizQuestion>
+  ): VisualQuizQuestion[] {
+    return questions.map((question, currentIndex) => {
+      if (currentIndex !== questionIndex) {
+        return question;
+      }
+
+      return {
+        ...question,
+        ...patch,
+      };
+    });
+  }
+
+  function getNextVisualSectionNumber(): number {
+    const sections = (formData.visualBlocks || []).map((block) => block.section || 1);
+    return sections.length > 0 ? Math.max(...sections) + 1 : 1;
+  }
+
+  function createVisualBlock(sectionNumber: number, type: VisualBlock['type'] = 'material'): VisualBlock {
+    return {
+      id: Date.now().toString(),
+      section: sectionNumber,
+      type,
+      title: '',
+      content: type === 'material' ? '' : undefined,
+      url: type === 'video' ? '' : undefined,
+      urls: type === 'image' || type === 'diagram' ? [''] : undefined,
+      questions: type === 'quiz' ? [createEmptyVisualQuestion()] : undefined,
+    };
+  }
+
+  function createAuditoryBlock(sectionNumber: number, type: AuditoryBlock['type'] = 'material'): AuditoryBlock {
+    return {
+      id: Date.now().toString(),
+      section: sectionNumber,
+      type,
+      title: '',
+      content: type === 'material' ? '' : undefined,
+      url: type === 'audio' ? '' : undefined,
+      questions: type === 'quiz' ? [createEmptyVisualQuestion()] : undefined,
+    };
+  }
+
+  function buildLegacyAuditoryBlocks(auditory?: {
+    transcript?: string;
+    audioUrl?: string;
+    blocks?: AuditoryBlock[];
+  }): AuditoryBlock[] {
+    if (auditory?.blocks?.length) {
+      return auditory.blocks;
+    }
+
+    const blocks: AuditoryBlock[] = [];
+
+    if (auditory?.transcript) {
+      blocks.push({
+        id: 'legacy-auditory-material',
+        section: 1,
+        type: 'material',
+        title: 'Materi Audio',
+        content: auditory.transcript,
+      });
+    }
+
+    if (auditory?.audioUrl) {
+      blocks.push({
+        id: 'legacy-auditory-audio',
+        section: 1,
+        type: 'audio',
+        title: 'Audio Pendukung',
+        url: auditory.audioUrl,
+      });
+    }
+
+    if (blocks.length === 0) {
+      blocks.push({
+        id: 'legacy-auditory-empty',
+        section: 1,
+        type: 'material',
+        title: 'Materi Audio',
+        content: 'Belum ada konten audio. Tambahkan block baru untuk mulai menyusun materi.',
+      });
+    }
+
+    return blocks;
+  }
+
+  function getNextAuditorySectionNumber(): number {
+    const sections = (formData.auditoryBlocks || []).map((block) => block.section || 1);
+    return sections.length > 0 ? Math.max(...sections) + 1 : 1;
+  }
+
+  function createKinestheticQuizBlock(sectionNumber: number): KinestheticBlock {
+    return {
+      id: Date.now().toString(),
+      section: sectionNumber,
+      type: 'quiz',
+      questions: [createEmptyVisualQuestion()],
+      content: '',
+    };
+  }
+
+  function getNextKinestheticSectionNumber(): number {
+    const sections = (formData.kinestheticBlocks || []).map((block) => block.section || 1);
+    return sections.length > 0 ? Math.max(...sections) + 1 : 1;
+  }
 
   const legacyKinestheticBlocks: KinestheticBlock[] = module?.content.kinesthetic.blocks?.length
     ? module.content.kinesthetic.blocks
@@ -325,6 +512,8 @@ export function TeacherEditModule({ course, module, onClose, isCreating = false 
     visualImages: module?.content.visual.images ?? defaultFormData.visualImages,
     visualDiagrams: module?.content.visual.diagrams ?? defaultFormData.visualDiagrams,
     visualVideoUrl: module?.content.visual.videoUrl ?? defaultFormData.visualVideoUrl,
+    visualBlocks: buildLegacyVisualBlocks(module?.content.visual),
+    auditoryBlocks: buildLegacyAuditoryBlocks(module?.content.auditory),
     auditoryTranscript: module?.content.auditory.transcript ?? defaultFormData.auditoryTranscript,
     kinestheticActivityType: module?.content.kinesthetic.blocks?.length
       ? 'tiered-blocks'
@@ -345,6 +534,7 @@ export function TeacherEditModule({ course, module, onClose, isCreating = false 
     if (kinesthetic?.learningMaterial) {
       blocks.push({
         id: 'legacy-material',
+        section: 1,
         type: 'material',
         content: kinesthetic.learningMaterial,
       });
@@ -353,6 +543,7 @@ export function TeacherEditModule({ course, module, onClose, isCreating = false 
     if (kinesthetic?.instructions || (kinesthetic?.items && kinesthetic.items.length > 0)) {
       blocks.push({
         id: 'legacy-practice',
+        section: 1,
         type: 'practice-text',
         instructions: kinesthetic?.instructions || 'Kerjakan latihan berikut',
         content: kinesthetic?.items && kinesthetic.items.length > 0
@@ -364,6 +555,7 @@ export function TeacherEditModule({ course, module, onClose, isCreating = false 
     if (blocks.length === 0) {
       blocks.push({
         id: 'legacy-empty',
+        section: 1,
         type: 'material',
         content: 'Konten kinestetik lama belum punya blok berjenjang. Silakan tambah block baru.',
       });
@@ -455,9 +647,11 @@ export function TeacherEditModule({ course, module, onClose, isCreating = false 
             images: Array.isArray(formData.visualImages) ? formData.visualImages : [],
             diagrams: Array.isArray(formData.visualDiagrams) ? formData.visualDiagrams : [],
             videoUrl: formData.visualVideoUrl,
+            blocks: formData.visualBlocks || [],
           },
           auditory: {
             transcript: formData.auditoryTranscript,
+            blocks: formData.auditoryBlocks || [],
           },
           kinesthetic: {
             activityType: (formData.kinestheticBlocks || []).length > 0
@@ -538,105 +732,624 @@ export function TeacherEditModule({ course, module, onClose, isCreating = false 
         <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-blue-600" />
-            👁️ Konten Visual (Baca & Tonton)
+            👁️ Konten Visual (Block Dinamis)
           </h2>
-          
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Konten Teks</label>
-            <RichEditor
-              value={formData.visualText}
-              onChange={(val) => setFormData({ ...formData, visualText: val })}
-              placeholder="Konten teks untuk pelajar visual"
-            />
+
+          <div className="bg-blue-50/60 rounded-lg p-4 border border-blue-200 text-sm text-blue-900">
+            <p className="font-semibold mb-1">💡 Tips: Susun visual sebagai block yang fleksibel</p>
+            <p>Gunakan block materi, video, gambar, atau diagram sesuai kebutuhan topik. Guru bebas mengatur urutan dan jumlah block.</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4 mt-4">
-            <div className="p-4 border border-dashed border-slate-300 rounded-xl hover:border-blue-500 transition-colors bg-slate-50">
-              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-                <Video className="w-4 h-4 text-blue-500" /> Unggah Video Pelajaran
-              </label>
-              <button
-                type="button"
-                onClick={() => handleFileUpload('visualVideoUrl', 'video')}
-                className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 px-4 py-2 border border-slate-300 rounded-lg hover:bg-blue-50 transition-colors"
-              >
-                Pilih File Video
-              </button>
-              {formData.visualVideoUrl && (
-                <div className="mt-2">
-                  <p className="text-xs text-green-600 flex items-center gap-1 mb-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full inline-block" /> Video terlampir
-                  </p>
-                  <p className="text-xs text-slate-500 truncate">{formData.visualVideoUrl}</p>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, visualVideoUrl: '' })}
-                    className="text-xs text-red-600 hover:text-red-700 mt-1"
-                  >
-                    Hapus
-                  </button>
-                </div>
-              )}
-            </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                const nextSection = getNextVisualSectionNumber();
+                setFormData({
+                  ...formData,
+                  visualBlocks: [...(formData.visualBlocks || []), createVisualBlock(nextSection, 'material')],
+                });
+              }}
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+            >
+              + Tambah Section
+            </button>
 
-            <div className="p-4 border border-dashed border-slate-300 rounded-xl hover:border-blue-500 transition-colors bg-slate-50">
-              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-                <ImageIcon className="w-4 h-4 text-blue-500" /> Tambah Gambar Pelengkap
-              </label>
-              <button
-                type="button"
-                onClick={() => handleImageListUpload(false)}
-                className="block w-full text-sm text-slate-500 px-4 py-2 border border-slate-300 rounded-lg hover:bg-blue-50 transition-colors"
-              >
-                Pilih File Gambar
-              </button>
-              {(formData.visualImages as string[]).length > 0 && (
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  {(formData.visualImages as string[]).map((imgUrl: string, imgIdx: number) => (
-                    <div key={imgIdx} className="relative group">
-                      <img src={imgUrl} alt={`img-${imgIdx}`}
-                        className="w-full h-20 object-cover rounded-lg border border-slate-200" />
+            <button
+              type="button"
+              onClick={() => {
+                const nextSection = getNextVisualSectionNumber();
+                setFormData({
+                  ...formData,
+                  visualBlocks: [...(formData.visualBlocks || []), createVisualBlock(nextSection, 'quiz')],
+                });
+              }}
+              className="px-4 py-2 rounded-lg border border-indigo-200 text-indigo-700 text-sm font-semibold hover:bg-indigo-50 transition-colors"
+            >
+              + Tambah Section Quiz
+            </button>
+          </div>
+
+          <div className="space-y-3 bg-slate-50 p-4 rounded-lg max-h-[32rem] overflow-y-auto">
+            {(formData.visualBlocks || []).map((block, idx) => (
+              <div key={block.id || idx} className="bg-white p-4 rounded-lg border border-slate-200 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <input
+                    type="text"
+                    value={block.title || ''}
+                    onChange={(e) => {
+                      const newBlocks = [...(formData.visualBlocks || [])];
+                      newBlocks[idx].title = e.target.value;
+                      setFormData({ ...formData, visualBlocks: newBlocks });
+                    }}
+                    placeholder={`Judul block / section ${idx + 1}`}
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      value={block.section || 1}
+                      onChange={(e) => {
+                        const newBlocks = [...(formData.visualBlocks || [])];
+                        newBlocks[idx].section = Math.max(1, Number(e.target.value) || 1);
+                        setFormData({ ...formData, visualBlocks: newBlocks });
+                      }}
+                      className="w-24 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                      title="Section"
+                    />
+                    <select
+                      value={block.type}
+                      onChange={(e) => {
+                        const newBlocks = [...(formData.visualBlocks || [])];
+                        newBlocks[idx].type = e.target.value as VisualBlock['type'];
+                        setFormData({ ...formData, visualBlocks: newBlocks });
+                      }}
+                      className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium"
+                    >
+                      <option value="material">📚 Materi</option>
+                      <option value="video">🎬 Video</option>
+                      <option value="image">🖼️ Gambar</option>
+                      <option value="diagram">🧩 Diagram</option>
+                      <option value="quiz">📝 Quiz</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newBlocks = formData.visualBlocks?.filter((_, i) => i !== idx) ?? [];
+                        setFormData({ ...formData, visualBlocks: newBlocks });
+                      }}
+                      className="text-red-600 hover:text-red-700 text-sm font-medium"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                </div>
+
+                {block.type === 'material' && (
+                  <RichEditor
+                    value={block.content || ''}
+                    onChange={(val) => {
+                      const newBlocks = [...(formData.visualBlocks || [])];
+                      newBlocks[idx].content = val;
+                      setFormData({ ...formData, visualBlocks: newBlocks });
+                    }}
+                    placeholder="Tulis materi visual di block ini"
+                  />
+                )}
+
+                {block.type === 'video' && (
+                  <input
+                    type="url"
+                    value={block.url || ''}
+                    onChange={(e) => {
+                      const newBlocks = [...(formData.visualBlocks || [])];
+                      newBlocks[idx].url = e.target.value;
+                      setFormData({ ...formData, visualBlocks: newBlocks });
+                    }}
+                    placeholder="URL video"
+                    className="w-full p-2 border border-slate-300 rounded text-sm"
+                  />
+                )}
+
+                {(block.type === 'image' || block.type === 'diagram') && (
+                  <textarea
+                    value={(block.urls || []).join('\n')}
+                    onChange={(e) => {
+                      const newBlocks = [...(formData.visualBlocks || [])];
+                      newBlocks[idx].urls = e.target.value
+                        .split('\n')
+                        .map((item) => item.trim())
+                        .filter(Boolean);
+                      setFormData({ ...formData, visualBlocks: newBlocks });
+                    }}
+                    placeholder="Satu URL per baris"
+                    className="w-full p-2 border border-slate-300 rounded text-sm min-h-24 resize-vertical"
+                  />
+                )}
+
+                {block.type === 'quiz' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">Quiz Section</p>
+                        <p className="text-xs text-slate-500">Tambahkan pertanyaan dan opsi jawaban di sini, tanpa JSON mentah.</p>
+                      </div>
                       <button
                         type="button"
                         onClick={() => {
-                          setFormData(prev => ({
-                            ...prev,
-                            visualImages: (prev.visualImages as string[]).filter((_: string, i: number) => i !== imgIdx)
-                          }));
+                          const newBlocks = [...(formData.visualBlocks || [])];
+                          newBlocks[idx].questions = [
+                            ...(newBlocks[idx].questions || []),
+                            createEmptyVisualQuestion(),
+                          ];
+                          setFormData({ ...formData, visualBlocks: newBlocks });
                         }}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        ×
+                        className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+                      >
+                        + Tambah Soal
                       </button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+
+                    <div className="space-y-4">
+                      {(block.questions || []).map((question, questionIndex) => (
+                        <div key={questionIndex} className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 space-y-2">
+                              <label className="block text-sm font-medium text-slate-700">Pertanyaan {questionIndex + 1}</label>
+                              <textarea
+                                value={question.text}
+                                onChange={(e) => {
+                                  const newBlocks = [...(formData.visualBlocks || [])];
+                                  newBlocks[idx].questions = updateVisualQuestion(
+                                    newBlocks[idx].questions || [],
+                                    questionIndex,
+                                    { text: e.target.value }
+                                  );
+                                  setFormData({ ...formData, visualBlocks: newBlocks });
+                                }}
+                                placeholder="Tulis pertanyaan quiz di sini"
+                                className="w-full p-3 border border-slate-300 rounded-lg text-sm min-h-20 resize-vertical"
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newBlocks = [...(formData.visualBlocks || [])];
+                                newBlocks[idx].questions = (newBlocks[idx].questions || []).filter((_, i) => i !== questionIndex);
+                                setFormData({ ...formData, visualBlocks: newBlocks });
+                              }}
+                              className="text-red-600 hover:text-red-700 text-sm font-medium whitespace-nowrap"
+                            >
+                              Hapus Soal
+                            </button>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-sm font-medium text-slate-700">Opsi Jawaban</p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newBlocks = [...(formData.visualBlocks || [])];
+                                  const questions = [...(newBlocks[idx].questions || [])];
+                                  questions[questionIndex] = {
+                                    ...questions[questionIndex],
+                                    options: [...questions[questionIndex].options, ''],
+                                  };
+                                  newBlocks[idx].questions = questions;
+                                  setFormData({ ...formData, visualBlocks: newBlocks });
+                                }}
+                                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                              >
+                                + Tambah Opsi
+                              </button>
+                            </div>
+
+                            <div className="grid gap-3">
+                              {question.options.map((option, optionIndex) => (
+                                <div key={optionIndex} className="flex items-center gap-3">
+                                  <input
+                                    type="radio"
+                                    name={`correct-${idx}-${questionIndex}`}
+                                    checked={question.correctOptionIndex === optionIndex}
+                                    onChange={() => {
+                                      const newBlocks = [...(formData.visualBlocks || [])];
+                                      newBlocks[idx].questions = updateVisualQuestion(
+                                        newBlocks[idx].questions || [],
+                                        questionIndex,
+                                        { correctOptionIndex: optionIndex }
+                                      );
+                                      setFormData({ ...formData, visualBlocks: newBlocks });
+                                    }}
+                                    className="h-4 w-4 text-indigo-600"
+                                    title="Set jawaban benar"
+                                  />
+
+                                  <input
+                                    type="text"
+                                    value={option}
+                                    onChange={(e) => {
+                                      const newBlocks = [...(formData.visualBlocks || [])];
+                                      const questions = [...(newBlocks[idx].questions || [])];
+                                      const options = [...questions[questionIndex].options];
+                                      options[optionIndex] = e.target.value;
+                                      questions[questionIndex] = {
+                                        ...questions[questionIndex],
+                                        options,
+                                      };
+                                      newBlocks[idx].questions = questions;
+                                      setFormData({ ...formData, visualBlocks: newBlocks });
+                                    }}
+                                    placeholder={`Opsi ${optionIndex + 1}`}
+                                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                                  />
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newBlocks = [...(formData.visualBlocks || [])];
+                                      const questions = [...(newBlocks[idx].questions || [])];
+                                      const options = questions[questionIndex].options.filter((_, i) => i !== optionIndex);
+                                      const nextCorrectIndex = questions[questionIndex].correctOptionIndex >= options.length
+                                        ? Math.max(0, options.length - 1)
+                                        : questions[questionIndex].correctOptionIndex;
+                                      questions[questionIndex] = {
+                                        ...questions[questionIndex],
+                                        options,
+                                        correctOptionIndex: nextCorrectIndex,
+                                      };
+                                      newBlocks[idx].questions = questions;
+                                      setFormData({ ...formData, visualBlocks: newBlocks });
+                                    }}
+                                    disabled={question.options.length <= 2}
+                                    className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    Hapus
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {(block.questions || []).length === 0 && (
+                        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
+                          Belum ada soal. Klik tombol <span className="font-semibold text-indigo-600">Tambah Soal</span> untuk memulai quiz section ini.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {(formData.visualBlocks || []).length === 0 && (
+              <p className="text-slate-400 text-sm text-center py-8">Belum ada visual block. Klik tombol tambah block di bawah.</p>
+            )}
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const newBlock: VisualBlock = {
+                ...createVisualBlock(getNextVisualSectionNumber(), 'material'),
+              };
+              setFormData({
+                ...formData,
+                visualBlocks: [...(formData.visualBlocks || []), newBlock],
+              });
+            }}
+            className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-500 text-slate-600 hover:text-blue-600 font-medium text-sm transition-colors"
+          >
+            + Tambah Block Visual
+          </button>
         </div>
 
         {/* ── Auditory Learning ──────────────────────── */}
         <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <Music className="w-5 h-5 text-purple-600" />
-            🎧 Konten Audio (Dengarkan)
+            🎧 Konten Audio (Block Dinamis)
           </h2>
           
           <div className="bg-purple-50/50 rounded-lg p-4 border border-purple-200 text-sm text-purple-900">
-            <p className="font-semibold mb-2">💡 Tips: Gunakan editor di bawah untuk menggabungkan teks dan audio</p>
-            <p>Klik tombol 🎵 di toolbar untuk menambahkan file audio. Anda bisa menambahkan unlimited audio dengan teks yang selang-seling!</p>
+            <p className="font-semibold mb-2">💡 Tips: Susun audio sebagai section yang bertahap</p>
+            <p>Gunakan block materi, audio, atau quiz agar siswa fokus per bagian dan bisa lanjut setelah lulus evaluasi.</p>
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-900 mb-2">Konten Teks + Audio Transkrip</label>
-            <RichEditor
-              value={formData.auditoryTranscript}
-              onChange={(val) => setFormData({ ...formData, auditoryTranscript: val })}
-              placeholder="Tulis teks, tambahkan audio... Ulangi sesuai kebutuhan!"
-              includeAudio={true}
-            />
-            <p className="text-xs text-slate-500 mt-2">📌 Struktur: Teks → Audio → Teks → Audio (unlimited)</p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                const nextSection = getNextAuditorySectionNumber();
+                setFormData({
+                  ...formData,
+                  auditoryBlocks: [...(formData.auditoryBlocks || []), createAuditoryBlock(nextSection, 'material')],
+                });
+              }}
+              className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-colors"
+            >
+              + Tambah Section
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const nextSection = getNextAuditorySectionNumber();
+                setFormData({
+                  ...formData,
+                  auditoryBlocks: [...(formData.auditoryBlocks || []), createAuditoryBlock(nextSection, 'quiz')],
+                });
+              }}
+              className="px-4 py-2 rounded-lg border border-purple-200 text-purple-700 text-sm font-semibold hover:bg-purple-50 transition-colors"
+            >
+              + Tambah Section Quiz
+            </button>
           </div>
+
+          <div className="space-y-3 bg-slate-50 p-4 rounded-lg max-h-[32rem] overflow-y-auto">
+            {(formData.auditoryBlocks || []).map((block, idx) => (
+              <div key={block.id || idx} className="bg-white p-4 rounded-lg border border-slate-200 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <input
+                    type="text"
+                    value={block.title || ''}
+                    onChange={(e) => {
+                      const newBlocks = [...(formData.auditoryBlocks || [])];
+                      newBlocks[idx].title = e.target.value;
+                      setFormData({ ...formData, auditoryBlocks: newBlocks });
+                    }}
+                    placeholder={`Judul block / section ${idx + 1}`}
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      value={block.section || 1}
+                      onChange={(e) => {
+                        const newBlocks = [...(formData.auditoryBlocks || [])];
+                        newBlocks[idx].section = Math.max(1, Number(e.target.value) || 1);
+                        setFormData({ ...formData, auditoryBlocks: newBlocks });
+                      }}
+                      className="w-24 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                      title="Section"
+                    />
+                    <select
+                      value={block.type}
+                      onChange={(e) => {
+                        const newBlocks = [...(formData.auditoryBlocks || [])];
+                        newBlocks[idx].type = e.target.value as AuditoryBlock['type'];
+                        if (e.target.value === 'quiz' && (!newBlocks[idx].questions || newBlocks[idx].questions.length === 0)) {
+                          newBlocks[idx].questions = [createEmptyVisualQuestion()];
+                        }
+                        setFormData({ ...formData, auditoryBlocks: newBlocks });
+                      }}
+                      className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium"
+                    >
+                      <option value="material">📚 Materi</option>
+                      <option value="audio">🎵 Audio</option>
+                      <option value="quiz">📝 Quiz</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newBlocks = formData.auditoryBlocks?.filter((_, i) => i !== idx) ?? [];
+                        setFormData({ ...formData, auditoryBlocks: newBlocks });
+                      }}
+                      className="text-red-600 hover:text-red-700 text-sm font-medium"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                </div>
+
+                {block.type === 'material' && (
+                  <RichEditor
+                    value={block.content || ''}
+                    onChange={(val) => {
+                      const newBlocks = [...(formData.auditoryBlocks || [])];
+                      newBlocks[idx].content = val;
+                      setFormData({ ...formData, auditoryBlocks: newBlocks });
+                    }}
+                    placeholder="Tulis materi audio di block ini"
+                    includeAudio={true}
+                  />
+                )}
+
+                {block.type === 'audio' && (
+                  <input
+                    type="url"
+                    value={block.url || ''}
+                    onChange={(e) => {
+                      const newBlocks = [...(formData.auditoryBlocks || [])];
+                      newBlocks[idx].url = e.target.value;
+                      setFormData({ ...formData, auditoryBlocks: newBlocks });
+                    }}
+                    placeholder="URL audio"
+                    className="w-full p-2 border border-slate-300 rounded text-sm"
+                  />
+                )}
+
+                {block.type === 'quiz' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">Quiz Section</p>
+                        <p className="text-xs text-slate-500">Tambah pertanyaan dan opsi tanpa JSON mentah.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newBlocks = [...(formData.auditoryBlocks || [])];
+                          newBlocks[idx].questions = [
+                            ...(newBlocks[idx].questions || []),
+                            createEmptyVisualQuestion(),
+                          ];
+                          setFormData({ ...formData, auditoryBlocks: newBlocks });
+                        }}
+                        className="px-3 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition-colors"
+                      >
+                        + Tambah Soal
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {(block.questions || []).map((question, questionIndex) => (
+                        <div key={questionIndex} className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 space-y-2">
+                              <label className="block text-sm font-medium text-slate-700">Pertanyaan {questionIndex + 1}</label>
+                              <textarea
+                                value={question.text}
+                                onChange={(e) => {
+                                  const newBlocks = [...(formData.auditoryBlocks || [])];
+                                  newBlocks[idx].questions = updateVisualQuestion(
+                                    newBlocks[idx].questions || [],
+                                    questionIndex,
+                                    { text: e.target.value }
+                                  );
+                                  setFormData({ ...formData, auditoryBlocks: newBlocks });
+                                }}
+                                placeholder="Tulis pertanyaan quiz di sini"
+                                className="w-full p-3 border border-slate-300 rounded-lg text-sm min-h-20 resize-vertical"
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newBlocks = [...(formData.auditoryBlocks || [])];
+                                newBlocks[idx].questions = (newBlocks[idx].questions || []).filter((_, i) => i !== questionIndex);
+                                setFormData({ ...formData, auditoryBlocks: newBlocks });
+                              }}
+                              className="text-red-600 hover:text-red-700 text-sm font-medium whitespace-nowrap"
+                            >
+                              Hapus Soal
+                            </button>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-sm font-medium text-slate-700">Opsi Jawaban</p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newBlocks = [...(formData.auditoryBlocks || [])];
+                                  const questions = [...(newBlocks[idx].questions || [])];
+                                  questions[questionIndex] = {
+                                    ...questions[questionIndex],
+                                    options: [...questions[questionIndex].options, ''],
+                                  };
+                                  newBlocks[idx].questions = questions;
+                                  setFormData({ ...formData, auditoryBlocks: newBlocks });
+                                }}
+                                className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                              >
+                                + Tambah Opsi
+                              </button>
+                            </div>
+
+                            <div className="grid gap-3">
+                              {question.options.map((option, optionIndex) => (
+                                <div key={optionIndex} className="flex items-center gap-3">
+                                  <input
+                                    type="radio"
+                                    name={`auditory-correct-${idx}-${questionIndex}`}
+                                    checked={question.correctOptionIndex === optionIndex}
+                                    onChange={() => {
+                                      const newBlocks = [...(formData.auditoryBlocks || [])];
+                                      newBlocks[idx].questions = updateVisualQuestion(
+                                        newBlocks[idx].questions || [],
+                                        questionIndex,
+                                        { correctOptionIndex: optionIndex }
+                                      );
+                                      setFormData({ ...formData, auditoryBlocks: newBlocks });
+                                    }}
+                                    className="h-4 w-4 text-purple-600"
+                                    title="Set jawaban benar"
+                                  />
+
+                                  <input
+                                    type="text"
+                                    value={option}
+                                    onChange={(e) => {
+                                      const newBlocks = [...(formData.auditoryBlocks || [])];
+                                      const questions = [...(newBlocks[idx].questions || [])];
+                                      const options = [...questions[questionIndex].options];
+                                      options[optionIndex] = e.target.value;
+                                      questions[questionIndex] = {
+                                        ...questions[questionIndex],
+                                        options,
+                                      };
+                                      newBlocks[idx].questions = questions;
+                                      setFormData({ ...formData, auditoryBlocks: newBlocks });
+                                    }}
+                                    placeholder={`Opsi ${optionIndex + 1}`}
+                                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                                  />
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newBlocks = [...(formData.auditoryBlocks || [])];
+                                      const questions = [...(newBlocks[idx].questions || [])];
+                                      const options = questions[questionIndex].options.filter((_, i) => i !== optionIndex);
+                                      const nextCorrectIndex = questions[questionIndex].correctOptionIndex >= options.length
+                                        ? Math.max(0, options.length - 1)
+                                        : questions[questionIndex].correctOptionIndex;
+                                      questions[questionIndex] = {
+                                        ...questions[questionIndex],
+                                        options,
+                                        correctOptionIndex: nextCorrectIndex,
+                                      };
+                                      newBlocks[idx].questions = questions;
+                                      setFormData({ ...formData, auditoryBlocks: newBlocks });
+                                    }}
+                                    disabled={question.options.length <= 2}
+                                    className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    Hapus
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {(block.questions || []).length === 0 && (
+                        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
+                          Belum ada soal. Klik tombol <span className="font-semibold text-purple-600">Tambah Soal</span> untuk memulai quiz section ini.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {(formData.auditoryBlocks || []).length === 0 && (
+              <p className="text-slate-400 text-sm text-center py-8">Belum ada auditory block. Klik tombol tambah block di bawah.</p>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const newBlock = createAuditoryBlock(getNextAuditorySectionNumber(), 'material');
+              setFormData({
+                ...formData,
+                auditoryBlocks: [...(formData.auditoryBlocks || []), newBlock],
+              });
+            }}
+            className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg hover:border-purple-500 text-slate-600 hover:text-purple-600 font-medium text-sm transition-colors"
+          >
+            + Tambah Block Audio
+          </button>
         </div>
 
         {/* ── Kinesthetic Learning (Tiered + SQL Practice) ──────────────────────── */}
@@ -647,20 +1360,80 @@ export function TeacherEditModule({ course, module, onClose, isCreating = false 
           </h2>
 
           <div className="bg-orange-50/50 rounded-lg p-4 border border-orange-200 text-sm text-orange-900">
-            <p className="font-semibold mb-2">💡 Tips: Buat urutan: Materi → Praktik → Materi → Praktik</p>
-            <p>Praktik bisa berupa teks interaktif atau SQL editor dengan visualisasi hasil</p>
+            <p className="font-semibold mb-2">💡 Tips: Susun kinestetik sebagai section bertahap</p>
+            <p>Setiap section bisa berisi materi, praktik teks, praktik SQL, atau quiz untuk membuka section berikutnya.</p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                const nextSection = getNextKinestheticSectionNumber();
+                setFormData({
+                  ...formData,
+                  kinestheticBlocks: [...(formData.kinestheticBlocks || []), {
+                    ...createVisualBlock(nextSection, 'material'),
+                    type: 'material',
+                    content: '',
+                  } as any],
+                });
+              }}
+              className="px-4 py-2 rounded-lg bg-orange-600 text-white text-sm font-semibold hover:bg-orange-700 transition-colors"
+            >
+              + Tambah Section
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const nextSection = getNextKinestheticSectionNumber();
+                setFormData({
+                  ...formData,
+                  kinestheticBlocks: [...(formData.kinestheticBlocks || []), createKinestheticQuizBlock(nextSection)],
+                });
+              }}
+              className="px-4 py-2 rounded-lg border border-orange-200 text-orange-700 text-sm font-semibold hover:bg-orange-50 transition-colors"
+            >
+              + Tambah Section Quiz
+            </button>
           </div>
 
           {/* Blocks Container */}
           <div className="space-y-3 bg-slate-50 p-4 rounded-lg max-h-96 overflow-y-auto">
             {(formData.kinestheticBlocks || []).map((block, idx) => (
               <div key={block.id || idx} className="bg-white p-4 rounded-lg border border-slate-200 space-y-2">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <input
+                    type="text"
+                    value={block.content || block.instructions || block.sampleSql || ''}
+                    onChange={() => {
+                      // no-op label field placeholder; actual block content is edited below
+                    }}
+                    placeholder={`Block / Section ${idx + 1}`}
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                    readOnly
+                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      value={block.section || 1}
+                      onChange={(e) => {
+                        const newBlocks = [...(formData.kinestheticBlocks || [])];
+                        newBlocks[idx].section = Math.max(1, Number(e.target.value) || 1);
+                        setFormData({ ...formData, kinestheticBlocks: newBlocks });
+                      }}
+                      className="w-24 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                      title="Section"
+                    />
                   <select
                     value={block.type}
                     onChange={(e) => {
                       const newBlocks = [...(formData.kinestheticBlocks || [])];
                       newBlocks[idx].type = e.target.value as any;
+                      if (e.target.value === 'quiz' && (!newBlocks[idx].questions || newBlocks[idx].questions.length === 0)) {
+                        newBlocks[idx].questions = [createEmptyVisualQuestion()];
+                      }
                       setFormData({ ...formData, kinestheticBlocks: newBlocks });
                     }}
                     className="px-3 py-1 border border-slate-300 rounded text-sm font-medium"
@@ -668,6 +1441,7 @@ export function TeacherEditModule({ course, module, onClose, isCreating = false 
                     <option value="material">📚 Materi</option>
                     <option value="practice-text">✍️ Praktik Teks</option>
                     <option value="practice-sql">🔍 Praktik SQL</option>
+                    <option value="quiz">📝 Quiz</option>
                   </select>
                   <button
                     type="button"
@@ -679,6 +1453,7 @@ export function TeacherEditModule({ course, module, onClose, isCreating = false 
                   >
                     Hapus
                   </button>
+                  </div>
                 </div>
 
                 {/* Content for material block (rich editor) */}
@@ -749,11 +1524,202 @@ export function TeacherEditModule({ course, module, onClose, isCreating = false 
                     />
                   </>
                 )}
+
+                {block.type === 'quiz' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">Quiz Section</p>
+                        <p className="text-xs text-slate-500">Tambahkan pertanyaan dan opsi tanpa JSON mentah.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newBlocks = [...(formData.kinestheticBlocks || [])];
+                          newBlocks[idx].questions = [
+                            ...(newBlocks[idx].questions || []),
+                            createEmptyVisualQuestion(),
+                          ];
+                          setFormData({ ...formData, kinestheticBlocks: newBlocks });
+                        }}
+                        className="px-3 py-2 rounded-lg bg-orange-600 text-white text-sm font-medium hover:bg-orange-700 transition-colors"
+                      >
+                        + Tambah Soal
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {(block.questions || []).map((question, questionIndex) => (
+                        <div key={questionIndex} className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 space-y-2">
+                              <label className="block text-sm font-medium text-slate-700">Pertanyaan {questionIndex + 1}</label>
+                              <textarea
+                                value={question.text}
+                                onChange={(e) => {
+                                  const newBlocks = [...(formData.kinestheticBlocks || [])];
+                                  newBlocks[idx].questions = updateVisualQuestion(
+                                    newBlocks[idx].questions || [],
+                                    questionIndex,
+                                    { text: e.target.value }
+                                  );
+                                  setFormData({ ...formData, kinestheticBlocks: newBlocks });
+                                }}
+                                placeholder="Tulis pertanyaan quiz di sini"
+                                className="w-full p-3 border border-slate-300 rounded-lg text-sm min-h-20 resize-vertical"
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newBlocks = [...(formData.kinestheticBlocks || [])];
+                                newBlocks[idx].questions = (newBlocks[idx].questions || []).filter((_, i) => i !== questionIndex);
+                                setFormData({ ...formData, kinestheticBlocks: newBlocks });
+                              }}
+                              className="text-red-600 hover:text-red-700 text-sm font-medium whitespace-nowrap"
+                            >
+                              Hapus Soal
+                            </button>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-sm font-medium text-slate-700">Opsi Jawaban</p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newBlocks = [...(formData.kinestheticBlocks || [])];
+                                  const questions = [...(newBlocks[idx].questions || [])];
+                                  questions[questionIndex] = {
+                                    ...questions[questionIndex],
+                                    options: [...questions[questionIndex].options, ''],
+                                  };
+                                  newBlocks[idx].questions = questions;
+                                  setFormData({ ...formData, kinestheticBlocks: newBlocks });
+                                }}
+                                className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                              >
+                                + Tambah Opsi
+                              </button>
+                            </div>
+
+                            <div className="grid gap-3">
+                              {question.options.map((option, optionIndex) => (
+                                <div key={optionIndex} className="flex items-center gap-3">
+                                  <input
+                                    type="radio"
+                                    name={`kinesthetic-correct-${idx}-${questionIndex}`}
+                                    checked={question.correctOptionIndex === optionIndex}
+                                    onChange={() => {
+                                      const newBlocks = [...(formData.kinestheticBlocks || [])];
+                                      newBlocks[idx].questions = updateVisualQuestion(
+                                        newBlocks[idx].questions || [],
+                                        questionIndex,
+                                        { correctOptionIndex: optionIndex }
+                                      );
+                                      setFormData({ ...formData, kinestheticBlocks: newBlocks });
+                                    }}
+                                    className="h-4 w-4 text-orange-600"
+                                    title="Set jawaban benar"
+                                  />
+
+                                  <input
+                                    type="text"
+                                    value={option}
+                                    onChange={(e) => {
+                                      const newBlocks = [...(formData.kinestheticBlocks || [])];
+                                      const questions = [...(newBlocks[idx].questions || [])];
+                                      const options = [...questions[questionIndex].options];
+                                      options[optionIndex] = e.target.value;
+                                      questions[questionIndex] = {
+                                        ...questions[questionIndex],
+                                        options,
+                                      };
+                                      newBlocks[idx].questions = questions;
+                                      setFormData({ ...formData, kinestheticBlocks: newBlocks });
+                                    }}
+                                    placeholder={`Opsi ${optionIndex + 1}`}
+                                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                                  />
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newBlocks = [...(formData.kinestheticBlocks || [])];
+                                      const questions = [...(newBlocks[idx].questions || [])];
+                                      const options = questions[questionIndex].options.filter((_, i) => i !== optionIndex);
+                                      const nextCorrectIndex = questions[questionIndex].correctOptionIndex >= options.length
+                                        ? Math.max(0, options.length - 1)
+                                        : questions[questionIndex].correctOptionIndex;
+                                      questions[questionIndex] = {
+                                        ...questions[questionIndex],
+                                        options,
+                                        correctOptionIndex: nextCorrectIndex,
+                                      };
+                                      newBlocks[idx].questions = questions;
+                                      setFormData({ ...formData, kinestheticBlocks: newBlocks });
+                                    }}
+                                    disabled={question.options.length <= 2}
+                                    className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    Hapus
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {(block.questions || []).length === 0 && (
+                        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
+                          Belum ada soal. Klik tombol <span className="font-semibold text-orange-600">Tambah Soal</span> untuk memulai quiz section ini.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
             {(formData.kinestheticBlocks || []).length === 0 && (
               <p className="text-slate-400 text-sm text-center py-8">Belum ada block. Klik "Tambah Block" di bawah.</p>
             )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                const nextSection = getNextKinestheticSectionNumber();
+                setFormData({
+                  ...formData,
+                  kinestheticBlocks: [...(formData.kinestheticBlocks || []), {
+                    id: Date.now().toString(),
+                    section: nextSection,
+                    type: 'material',
+                    content: '',
+                  }],
+                });
+              }}
+              className="w-full sm:w-auto py-2 px-4 border-2 border-dashed border-slate-300 rounded-lg hover:border-orange-500 text-slate-600 hover:text-orange-600 font-medium text-sm transition-colors"
+            >
+              + Tambah Section
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const nextSection = getNextKinestheticSectionNumber();
+                setFormData({
+                  ...formData,
+                  kinestheticBlocks: [...(formData.kinestheticBlocks || []), createKinestheticQuizBlock(nextSection)],
+                });
+              }}
+              className="w-full sm:w-auto py-2 px-4 border-2 border-dashed border-orange-300 rounded-lg hover:border-orange-500 text-slate-600 hover:text-orange-600 font-medium text-sm transition-colors"
+            >
+              + Tambah Section Quiz
+            </button>
           </div>
 
           {/* Add Block Button */}
@@ -762,6 +1728,7 @@ export function TeacherEditModule({ course, module, onClose, isCreating = false 
             onClick={() => {
               const newBlock: KinestheticBlock = {
                 id: Date.now().toString(),
+                section: getNextKinestheticSectionNumber(),
                 type: 'material',
                 content: '',
               };

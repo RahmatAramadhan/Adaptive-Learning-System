@@ -8,12 +8,14 @@ import api from '../../../lib/api';
 export function TakeEvaluation() {
   const { evaluationId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const returnTo = searchParams.get('returnTo');
 
   useEffect(() => {
     const loadEvaluation = async () => {
@@ -86,6 +88,7 @@ export function TakeEvaluation() {
   if (submitted) {
     const percentage = result?.score || 0;
     const isPassing = percentage >= 60;
+    const finishPath = returnTo || '/student/evaluations';
 
     return (
       <div className="max-w-2xl mx-auto space-y-8">
@@ -132,10 +135,10 @@ export function TakeEvaluation() {
           </p>
 
           <button 
-            onClick={() => navigate('/student/evaluations')}
+            onClick={() => navigate(finishPath)}
             className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors"
           >
-            Selesai
+            {returnTo ? 'Lanjut ke Materi' : 'Selesai'}
           </button>
         </div>
       </div>
