@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useNavigate } from 'react-router';
 import { Users, BookOpen, Activity, TrendingUp, Edit, ArrowRight } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import api from '../../../lib/api';
 
 interface StudentItem {
@@ -61,6 +61,24 @@ export function TeacherDashboard() {
                 <Bar dataKey="students" fill="#6366f1" radius={[6, 6, 0, 0]} barSize={40} />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            {styleData.map((item) => (
+              <div 
+                key={item.name}
+                className="text-center bg-slate-50 rounded-xl p-3"
+              >
+                <p className="text-sm text-slate-500">
+                  {item.name}
+                </p>
+                <p className="text-xl font-bold text-indigo-600">
+                  {item.students}
+                </p>
+                <p className="text-xs text-slate-400">
+                  siswa
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
