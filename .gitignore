@@ -1,0 +1,47 @@
+# =========================
+# Laravel Backend
+# =========================
+
+lms-backend/vendor/
+lms-backend/node_modules/
+
+# Laravel environment
+lms-backend/.env
+
+# Laravel cache
+lms-backend/storage/*.key
+lms-backend/bootstrap/cache/*
+
+# Logs
+*.log
+
+
+# =========================
+# Vue / Frontend
+# =========================
+
+lms-frontend/node_modules/
+lms-frontend/dist/
+
+# Environment frontend
+lms-frontend/.env
+lms-frontend/.env.*
+
+# Build files
+lms-frontend/.vite/
+
+
+# =========================
+# Editor
+# =========================
+
+.vscode/
+.idea/
+
+
+# =========================
+# OS
+# =========================
+
+.DS_Store
+Thumbs.db
