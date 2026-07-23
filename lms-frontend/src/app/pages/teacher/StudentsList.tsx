@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Filter, MoreHorizontal, Eye, Headphones, Hand, Edit2, Trash2, X } from 'lucide-react';
+import { Search, MoreHorizontal, ChevronDown, Eye, Headphones, Hand, Edit2, Trash2, X } from 'lucide-react';
 import api from '../../../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -8,11 +8,18 @@ interface StudentItem {
   name: string;
   email: string;
   learning_style: string | null;
+
+  class: {
+    id: number;
+    name: string;
+  } | null;
 }
 
 export function StudentsList() {
   const [students, setStudents] = useState<StudentItem[]>([]);
   const [search, setSearch] = useState('');
+  const [classFilter, setClassFilter] = useState('');
+  const [styleFilter, setStyleFilter] = useState('');
   const [openMenu, setOpenMenu] = useState<number | null>(null);
   const [editStudent, setEditStudent] = useState<StudentItem | null>(null);
   const [deleteStudent, setDeleteStudent] = useState<StudentItem | null>(null);
@@ -29,10 +36,44 @@ export function StudentsList() {
       .catch(() => {});
   };
 
-  const filtered = students.filter(s =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = students.filter((student) => {
+    const matchSearch =
+      student.name
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      student.email
+        .toLowerCase()
+        .includes(search.toLowerCase());
+
+    const matchClass =
+      !classFilter ||
+      student.class?.name === classFilter;
+
+    const matchStyle =
+      !styleFilter ||
+      student.learning_style?.toLowerCase() ===
+        styleFilter.toLowerCase();
+
+    return (
+      matchSearch &&
+      matchClass &&
+      matchStyle
+    );
+  });
+
+const classOptions = [
+  ...new Set(
+    students
+      .map((s) => s.class?.name)
+      .filter(Boolean)
+  ),
+];
+
+const learningStyleOptions = [
+  'Visual',
+  'Auditori',
+  'Kinestetik',
+];    
 
   const handleEditSave = async (updatedStudent: StudentItem) => {
     try {
@@ -96,36 +137,69 @@ export function StudentsList() {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-visible">
-        <div className="p-4 border-b border-slate-200 flex gap-4">
-          <div className="relative flex-1">
+        <div className="p-4 border-b border-slate-200 flex gap-4 flex-wrap">
+
+          {/* Search */}
+          <div className="relative flex-1 min-w-[260px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Cari siswa..." 
+
+            <input
+              type="text"
+              placeholder="Cari siswa..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
-          <button className="px-4 py-2 border border-slate-300 rounded-lg flex items-center gap-2 hover:bg-slate-50">
-            <Filter className="w-4 h-4 text-slate-500" /> Filter
-          </button>
-        </div>
 
+          {/* Filter Kelas */}
+          <div className="relative">
+            <select
+              value={classFilter}
+              onChange={(e) => setClassFilter(e.target.value)}
+              className="appearance-none w-52 px-4 pr-10 py-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500">
+              <option value="">Semua Kelas</option>
+
+              {classOptions.map((kelas) => (
+                <option key={kelas} value={kelas}>
+                  {kelas}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+          </div>
+
+          {/* Filter Gaya Belajar */}
+          <div className="relative">
+            <select
+              value={styleFilter}
+              onChange={(e) => setStyleFilter(e.target.value)}
+              className="appearance-none w-52 px-4 pr-10 py-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500">
+              <option value="">Semua Gaya Belajar</option>
+              {learningStyleOptions.map((style) => (
+                <option key={style} value={style}>
+                  {style}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
           <thead className="bg-slate-50 text-slate-500 font-medium text-sm">
-            <tr>
-              <th className="px-6 py-4">Name</th>
+          <tr>
+              <th className="px-6 py-4">Nama</th>
               <th className="px-6 py-4">Email</th>
-              <th className="px-6 py-4">Dominant Learning Style</th>
+              <th className="px-6 py-4">Kelas</th>
+              <th className="px-6 py-4">Gaya Belajar</th>
               <th className="px-6 py-4">Progress</th>
               <th className="px-6 py-4"></th>
-            </tr>
+          </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filtered.length === 0 && (
-              <tr><td colSpan={5} className="px-6 py-10 text-center text-slate-400">Belum ada data siswa.</td></tr>
+              <tr><td colSpan={6} className="px-6 py-10 text-center text-slate-400">Belum ada data siswa.</td></tr>
             )}
             {filtered.map(student => {
               const style = student.learning_style?.toLowerCase() ?? '';
@@ -140,6 +214,15 @@ export function StudentsList() {
                   </div>
                 </td>
                 <td className="px-6 py-4 text-slate-500">{student.email}</td>
+                <td className="px-6 py-4">
+                  {student.class ? (<span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
+                      {student.class.name}
+                    </span>) : (
+                    <span className="text-slate-400 italic">
+                      Belum memiliki kelas
+                    </span>
+                  )}
+                </td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2 items-center">
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${

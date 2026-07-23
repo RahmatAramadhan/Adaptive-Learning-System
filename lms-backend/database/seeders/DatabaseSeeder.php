@@ -18,31 +18,11 @@ class DatabaseSeeder extends Seeder
     {
         // Create teacher
         User::firstOrCreate(
-            ['email' => 'teacher@example.com'],
+            ['email' => 'idhenz@gmail.com'],
             [
-                'name' => 'Mr. Teacher',
-                'password' => Hash::make('password'),
+                'name' => 'Hendra',
+                'password' => Hash::make('Hendra123*'),
                 'role' => 'guru',
-            ]
-        );
-
-        // Create student
-        User::firstOrCreate(
-            ['email' => 'student@example.com'],
-            [
-                'name' => 'Student User',
-                'password' => Hash::make('password'),
-                'role' => 'siswa',
-            ]
-        );
-
-        // Create another student
-        User::firstOrCreate(
-            ['email' => 'student2@example.com'],
-            [
-                'name' => 'Another Student',
-                'password' => Hash::make('password'),
-                'role' => 'siswa',
             ]
         );
 

@@ -16,6 +16,7 @@ class User extends Authenticatable
         'password',
         'role',
         'learning_style_id',
+        'class_id',
     ];
 
     protected $hidden = [
@@ -27,5 +28,15 @@ class User extends Authenticatable
     public function learningStyle()
     {
         return $this->hasOne(LearningStyles::class, 'user_id');
+    }
+
+     public function class()
+    {
+        return $this->belongsTo(SchoolClass::class, 'class_id');
+    }
+    
+    public function courses()
+    {
+        return $this->hasMany(Course::class, 'created_by');
     }
 }

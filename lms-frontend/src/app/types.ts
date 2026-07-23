@@ -149,3 +149,8 @@ export interface UserStats {
   learningTimeFormatted: string;
   modulesCompleted: number;
 }
+
+export interface SchoolClass {
+    id:number;
+    name:string;
+}

@@ -20,7 +20,7 @@ export function Register() {
     }
     setLoading(true);
     try {
-      await register(form.name, form.email, form.password, form.password_confirmation, 'siswa');
+      await register(form.name, form.email, form.password, form.password_confirmation);
       toast.success('Registrasi berhasil!');
       navigate('/');
     } catch (err: any) {

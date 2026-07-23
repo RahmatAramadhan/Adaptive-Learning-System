@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ModuleController;
 use App\Http\Controllers\Api\QuestionnaireController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\UploadController;
+use App\Http\Controllers\Api\ClassController;
 use Illuminate\Support\Facades\Route;
 
 // ── Handle CORS preflight ────────────────────────────────────────────────────
@@ -35,29 +36,48 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/courses',         [CourseController::class, 'index']);
     Route::get('/courses/{id}',    [CourseController::class, 'show']);
 
+    // ── Class Selection (siswa) ──────────────────────────────────────────────
+    Route::get('/classes/available', [ClassController::class, 'available']);
+    Route::put('/my-class',          [StudentController::class, 'selectClass']);
+
     // Guru only
     Route::middleware('role:guru')->group(function () {
+
+        // Courses
         Route::post('/courses',        [CourseController::class, 'store']);
         Route::put('/courses/{id}',    [CourseController::class, 'update']);
         Route::delete('/courses/{id}', [CourseController::class, 'destroy']);
 
-        Route::get('/modules',                              [ModuleController::class, 'index']);
-        Route::post('/modules',                             [ModuleController::class, 'store']);
-        Route::post('/courses/{courseId}/modules',          [ModuleController::class, 'store']);
+        // Modules
+        Route::get('/modules',                               [ModuleController::class, 'index']);
+        Route::post('/modules',                              [ModuleController::class, 'store']);
+        Route::post('/courses/{courseId}/modules',           [ModuleController::class, 'store']);
         Route::put('/courses/{courseId}/modules/{moduleId}', [ModuleController::class, 'update']);
         Route::delete('/courses/{courseId}/modules/{moduleId}', [ModuleController::class, 'destroy']);
 
+        // Evaluations
         Route::post('/evaluations',        [EvaluationController::class, 'store']);
         Route::put('/evaluations/{id}',    [EvaluationController::class, 'update']);
         Route::delete('/evaluations/{id}', [EvaluationController::class, 'destroy']);
         Route::get('/evaluations/{id}/student-results', [EvaluationController::class, 'getStudentResults']);
 
-        Route::get('/students',              [StudentController::class, 'index']);
-        Route::post('/students',             [StudentController::class, 'storeStudent']);
+        // Students
+        Route::get('/students',               [StudentController::class, 'index']);
+        Route::post('/students',              [StudentController::class, 'storeStudent']);
         Route::get('/students/{id}/progress', [StudentController::class, 'progress']);
-        Route::put('/students/{id}',         [StudentController::class, 'updateStudent']);
-        Route::delete('/students/{id}',      [StudentController::class, 'deleteStudent']);
+        Route::put('/students/{id}',          [StudentController::class, 'updateStudent']);
+        Route::delete('/students/{id}',       [StudentController::class, 'deleteStudent']);
+        Route::put('/students/{id}/class',    [StudentController::class, 'assignClass']);
+
+        // Classes
+        Route::get('/classes',                    [ClassController::class, 'index']);
+        Route::post('/classes',                   [ClassController::class, 'store']);
+        Route::put('/classes/{id}',               [ClassController::class, 'update']);
+        Route::get('/classes/{id}/students',      [ClassController::class, 'showStudents']);
+        Route::get('/teachers',                   [ClassController::class, 'teachers']);
+        Route::delete('/classes/{id}',            [ClassController::class, 'destroy']);
     });
+
 
     // ── Evaluations (siswa submit) ────────────────────────────────────────────
     Route::get('/evaluations',              [EvaluationController::class, 'index']);
@@ -70,5 +90,5 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Progress ──────────────────────────────────────────────────────────────
     Route::post('/progress', [StudentController::class, 'updateProgress']);
     Route::get('/progress',  [StudentController::class, 'myProgress']);
-    Route::get('/stats', [StudentController::class, 'stats']);
+    Route::get('/stats',     [StudentController::class, 'stats']);
 });
