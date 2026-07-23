@@ -121,6 +121,15 @@ const learningStyleOptions = [
     }
   };
 
+  const formatName = (name: string) => {
+    return name
+      .toLowerCase()
+      .split(' ')
+      .filter(Boolean)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -208,9 +217,9 @@ const learningStyleOptions = [
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
-                      {student.name.charAt(0)}
+                      {formatName(student.name).charAt(0)}
                     </div>
-                    <span className="font-semibold text-slate-900">{student.name}</span>
+                    <span className="font-semibold text-slate-900">{formatName(student.name)}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-slate-500">{student.email}</td>
