@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import api from '../../lib/api';
+import api, { csrf } from '@/lib/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface AuthUser {
@@ -27,6 +27,7 @@ interface AuthContextType {
   currentUser: AuthUser | null;
   token: string | null;
   loading: boolean;
+
   login: (
     email: string,
     password: string
@@ -53,41 +54,31 @@ export function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    const stored = localStorage.getItem('user');
 
-  const [currentUser, setCurrentUser] =
-    useState<AuthUser | null>(() => {
+    try {
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
 
-      const stored = localStorage.getItem('user');
+  const [token, setToken] = useState<string | null>(
+    () => localStorage.getItem('token')
+  );
 
-      return stored
-        ? JSON.parse(stored)
-        : null;
-
-    });
-
-  const [token, setToken] =
-    useState<string | null>(
-      () => localStorage.getItem('token')
-    );
-
-  const [loading, setLoading] =
-    useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // Verifikasi token saat aplikasi pertama kali dibuka
   useEffect(() => {
-
     const verify = async () => {
-
       if (!token) {
-
         setLoading(false);
-
         return;
-
       }
 
       try {
-
         const res = await api.get('/me');
 
         const user = res.data.user as AuthUser;
@@ -98,36 +89,26 @@ export function AuthProvider({
           'user',
           JSON.stringify(user)
         );
-
       } catch {
-
         setCurrentUser(null);
-
         setToken(null);
 
         localStorage.removeItem('token');
-
         localStorage.removeItem('user');
-
       } finally {
-
         setLoading(false);
-
       }
-
     };
 
     verify();
-
   }, [token]);
 
+  // Simpan user dan token
   const persist = (
     user: AuthUser,
     tok: string
   ) => {
-
     setCurrentUser(user);
-
     setToken(tok);
 
     localStorage.setItem(
@@ -139,13 +120,15 @@ export function AuthProvider({
       'user',
       JSON.stringify(user)
     );
-
   };
 
+  // ── Login ───────────────────────────────────────────────────────────────────
   const login = async (
     email: string,
     password: string
   ) => {
+    // Ambil CSRF cookie sebelum request login
+    await csrf.get('/sanctum/csrf-cookie');
 
     const res = await api.post(
       '/login',
@@ -159,9 +142,9 @@ export function AuthProvider({
       res.data.user,
       res.data.token
     );
-
   };
 
+  // ── Register ────────────────────────────────────────────────────────────────
   const register = async (
     name: string,
     email: string,
@@ -169,6 +152,8 @@ export function AuthProvider({
     password_confirmation: string,
     role = 'siswa'
   ) => {
+    // Ambil CSRF cookie sebelum request register
+    await csrf.get('/sanctum/csrf-cookie');
 
     const res = await api.post(
       '/register',
@@ -185,35 +170,26 @@ export function AuthProvider({
       res.data.user,
       res.data.token
     );
-
   };
 
+  // ── Logout ──────────────────────────────────────────────────────────────────
   const logout = async () => {
-
     try {
-
       await api.post('/logout');
-
     } catch {
-
-      // ignore
-
+      // Tetap logout di sisi frontend
     }
 
     setCurrentUser(null);
-
     setToken(null);
-
     setLoading(false);
 
     localStorage.removeItem('token');
-
     localStorage.removeItem('user');
-
   };
 
+  // ── Refresh User ────────────────────────────────────────────────────────────
   const refreshUser = async () => {
-
     const res = await api.get('/me');
 
     const user = res.data.user as AuthUser;
@@ -224,11 +200,9 @@ export function AuthProvider({
       'user',
       JSON.stringify(user)
     );
-
   };
 
   return (
-
     <AuthContext.Provider
       value={{
         currentUser,
@@ -240,27 +214,20 @@ export function AuthProvider({
         refreshUser,
       }}
     >
-
       {children}
-
     </AuthContext.Provider>
-
   );
-
 }
 
+// ── Hook ──────────────────────────────────────────────────────────────────────
 export const useAuth = () => {
-
   const ctx = useContext(AuthContext);
 
   if (!ctx) {
-
     throw new Error(
       'useAuth must be used within AuthProvider'
     );
-
   }
 
   return ctx;
-
 };
