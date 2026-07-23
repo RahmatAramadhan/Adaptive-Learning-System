@@ -210,15 +210,6 @@ export function ClassesManagement() {
             />
 
           </div>
-
-          <button className="px-4 py-2 border rounded-lg flex items-center gap-2">
-
-            <Filter className="w-4 h-4" />
-
-            Filter
-
-          </button>
-
         </div>
 
         <div className="overflow-x-auto">
