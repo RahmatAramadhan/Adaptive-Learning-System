@@ -496,7 +496,15 @@ function ClassModal({
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    
+    // Siapkan data yang akan dikirim
+    const payload = {
+      ...form,
+      // Ubah string kosong menjadi null agar database menerima
+      homeroom_teacher_id: form.homeroom_teacher_id === '' ? null : form.homeroom_teacher_id,
+    };
+
+    onSubmit(payload);
   };
 
   return (
