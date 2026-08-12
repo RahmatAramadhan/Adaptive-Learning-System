@@ -26,6 +26,7 @@ class StudentController extends Controller
                 'class' => $student->class ? [
                     'id' => $student->class->id,
                     'name' => $student->class->name,
+                    'academic_year' => $student->class->academic_year,
                 ] : null,
 
                 'bmw_mapping' => $student->bmwMapping ? [
