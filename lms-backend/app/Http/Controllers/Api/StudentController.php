@@ -140,30 +140,39 @@ class StudentController extends Controller
 
     public function updateStudent(Request $request, $id)
     {
+        // 1. Tambahkan validasi password nullable
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
             'class_id' => 'nullable|exists:classes,id',
+            'password' => 'nullable|string|min:8', 
         ]);
-
 
         $student = User::where('role', 'siswa')
             ->findOrFail($id);
 
-
-        $student->update([
+        // 2. Siapkan data dasar yang akan diupdate
+        $updateData = [
             'name' => $request->name,
             'email' => $request->email,
             'class_id' => $request->class_id,
-        ]);
+        ];
 
+        // 3. Jika password diisi di frontend, enkripsi dan tambahkan ke array update
+        if ($request->filled('password')) {
+            $updateData['password'] = bcrypt($request->password);
+        }
 
+        $student->update($updateData);
+
+        // 4. Muat ulang relasi, pastikan bmwMapping ikut dimuat
         $student->load([
             'learningStyle',
-            'class'
+            'class',
+            'bmwMapping' 
         ]);
 
-
+        // 5. Kembalikan respons beserta data BMW agar tabel tidak error/kosong
         return response()->json([
             'id' => $student->id,
             'name' => $student->name,
@@ -172,6 +181,13 @@ class StudentController extends Controller
             'class' => $student->class ? [
                 'id' => $student->class->id,
                 'name' => $student->class->name,
+            ] : null,
+            'bmw_mapping' => $student->bmwMapping ? [
+                'dominant_result' => $student->bmwMapping->dominant_result,
+                'bekerja_score' => $student->bmwMapping->bekerja_score,
+                'melanjutkan_score' => $student->bmwMapping->melanjutkan_score,
+                'wirausaha_score' => $student->bmwMapping->wirausaha_score,
+                'open_answers' => $student->bmwMapping->open_answers,
             ] : null,
         ]);
     }

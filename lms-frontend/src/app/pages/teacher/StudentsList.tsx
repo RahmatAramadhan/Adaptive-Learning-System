@@ -59,13 +59,24 @@ export function StudentsList() {
   const classOptions = [...new Set(students.map((s) => s.class?.name).filter(Boolean))];
   const learningStyleOptions = ['Visual', 'Auditori', 'Kinestetik'];    
 
-  const handleEditSave = async (updatedStudent: StudentItem) => {
+  const handleEditSave = async (updatedStudent: any) => {
     try {
       setIsLoading(true);
-      await api.put(`/students/${updatedStudent.id}`, {
+      
+      // Siapkan payload data (Nama, Email, dan Class ID wajib dikirim ulang)
+      const payload: any = {
         name: updatedStudent.name,
         email: updatedStudent.email,
-      });
+        class_id: updatedStudent.class?.id, // <-- Baris ini yang sebelumnya tertinggal
+      };
+
+      // Jika admin mengisi password baru, masukkan ke payload
+      if (updatedStudent.password) {
+        payload.password = updatedStudent.password;
+      }
+
+      await api.put(`/students/${updatedStudent.id}`, payload);
+      
       setStudents(students.map(s => s.id === updatedStudent.id ? updatedStudent : s));
       setEditStudent(null);
     } catch (error) {
@@ -420,16 +431,57 @@ function BmwDetailModal({ student, onClose }: { student: StudentItem; onClose: (
 // ── KOMPONEN LAMA (JANGAN DIUBAH) ──
 
 function EditStudentModal({ student, onClose, onSave, isLoading }: any) {
-  const [formData, setFormData] = useState({ name: student.name, email: student.email });
-  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave({ ...student, ...formData }); };
+  // Tambahkan state password dengan default kosong
+  const [formData, setFormData] = useState({ 
+    name: student.name, 
+    email: student.email,
+    password: '' 
+  });
+
+  const handleSubmit = (e: React.FormEvent) => { 
+    e.preventDefault(); 
+    onSave({ ...student, ...formData }); 
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-slate-900">Edit Student</h2><button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-6 h-6" /></button></div>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-slate-900">Edit Siswa</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-6 h-6" /></button>
+        </div>
+        
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div><label className="block text-sm font-medium text-slate-700 mb-2">Name</label><input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required /></div>
-          <div><label className="block text-sm font-medium text-slate-700 mb-2">Email</label><input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required /></div>
-          <div className="flex gap-2 pt-4"><button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50" disabled={isLoading}>Cancel</button><button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Changes'}</button></div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Nama Lengkap</label>
+            <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+            <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required />
+          </div>
+
+          {/* Kolom Password Baru */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Password Baru <span className="text-slate-400 font-normal">(Opsional)</span></label>
+            <input 
+              type="text" 
+              value={formData.password} 
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+              placeholder="Kosongkan jika tidak diubah"
+              minLength={8}
+            />
+            <p className="text-xs text-slate-500 mt-1">Minimal 8 karakter.</p>
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50" disabled={isLoading}>Batal</button>
+            <button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700" disabled={isLoading}>
+              {isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
+            </button>
+          </div>
         </form>
       </motion.div>
     </motion.div>
