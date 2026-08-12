@@ -22,7 +22,8 @@ import { EvaluationsManagement } from './pages/teacher/EvaluationsManagement';
 import { EditEvaluation } from './pages/teacher/EditEvaluation';
 import { StudentResultsReview } from './pages/teacher/StudentResultsReview';
 import { ModulesManagement } from './pages/teacher/ModulesManagement';
-import { BmwMapping } from './pages/BmwMapping'; // Sesuaikan path jika berbeda
+import { BmwMapping } from './pages/BmwMapping'; 
+import { StudentBmwResult } from './pages/teacher/StudentBmwResult';
 import { Toaster } from 'sonner';
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
@@ -152,6 +153,7 @@ const router = createBrowserRouter([
             path: 'profile',
             element: <div className="p-8">Profile</div>,
           },
+          
         ],
       },
 
@@ -181,6 +183,10 @@ const router = createBrowserRouter([
           {
             path: 'students',
             Component: StudentsList,
+          },
+          {
+            path: 'students/:id/bmw',
+            Component: StudentBmwResult,
           },
 
           // ==============================

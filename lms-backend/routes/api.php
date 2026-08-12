@@ -76,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/students/{id}',          [StudentController::class, 'updateStudent']);
         Route::delete('/students/{id}',       [StudentController::class, 'deleteStudent']);
         Route::put('/students/{id}/class',    [StudentController::class, 'assignClass']);
+        Route::get('/students/{id}',          [StudentController::class, 'showStudent']);
 
         // Classes
         Route::get('/classes',                    [ClassController::class, 'index']);

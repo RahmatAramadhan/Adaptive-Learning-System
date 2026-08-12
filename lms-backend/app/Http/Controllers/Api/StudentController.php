@@ -295,4 +295,28 @@ class StudentController extends Controller
             ],
         ]);
     }
+
+    public function showStudent($id)
+    {
+        $student = User::where('role', 'siswa')
+            ->with(['class', 'learningStyle', 'bmwMapping'])
+            ->findOrFail($id);
+
+        return response()->json([
+            'id' => $student->id,
+            'name' => $student->name,
+            'email' => $student->email,
+            'class' => $student->class ? [
+                'name' => $student->class->name,
+            ] : null,
+            'bmw_mapping' => $student->bmwMapping ? [
+                'dominant_result' => $student->bmwMapping->dominant_result,
+                'bekerja_score' => $student->bmwMapping->bekerja_score,
+                'melanjutkan_score' => $student->bmwMapping->melanjutkan_score,
+                'wirausaha_score' => $student->bmwMapping->wirausaha_score,
+                'open_answers' => $student->bmwMapping->open_answers,
+                'closed_answers' => $student->bmwMapping->closed_answers,
+            ] : null,
+        ]);
+    }
 }

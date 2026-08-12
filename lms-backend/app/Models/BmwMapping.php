@@ -12,6 +12,7 @@ class BmwMapping extends Model
     protected $fillable = [
         'user_id',
         'open_answers',
+        'closed_answers', 
         'bekerja_score',
         'melanjutkan_score',
         'wirausaha_score',
@@ -20,6 +21,7 @@ class BmwMapping extends Model
 
     protected $casts = [
         'open_answers' => 'array',
+        'closed_answers' => 'array', 
     ];
 
     public function user()

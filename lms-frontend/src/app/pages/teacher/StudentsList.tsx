@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Search, MoreHorizontal, ChevronDown, Eye, Headphones, Hand, Edit2, Trash2, X, Briefcase } from 'lucide-react';
 import api from '../../../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
+import { useNavigate } from 'react-router';
 
 interface StudentItem {
   id: number;
@@ -31,9 +32,9 @@ export function StudentsList() {
   const [openMenu, setOpenMenu] = useState<number | null>(null);
   const [editStudent, setEditStudent] = useState<StudentItem | null>(null);
   const [deleteStudent, setDeleteStudent] = useState<StudentItem | null>(null);
-  const [viewBmwStudent, setViewBmwStudent] = useState<StudentItem | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchStudents();
@@ -230,20 +231,13 @@ export function StudentsList() {
                 {/* Kolom BMW Mapping */}
                 <td className="px-6 py-4">
                   {student.bmw_mapping ? (
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                        {student.bmw_mapping.dominant_result}
-                      </span>
-                      <button 
-                        onClick={() => setViewBmwStudent(student)}
-                        className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
-                        title="Lihat Detail BMW"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 capitalize">
+                      {student.bmw_mapping.dominant_result}
+                    </span>
                   ) : (
-                    <span className="text-slate-400 text-sm italic">Belum diisi</span>
+                    <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">
+                      Belum diisi
+                    </span>
                   )}
                 </td>
 
@@ -267,8 +261,21 @@ export function StudentsList() {
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
-                          className="absolute -right-2 top-full mt-1 w-40 bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden"
+                          className="absolute -right-2 top-full mt-1 w-44 bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden"
                         >
+                          {/* Menu Detail BMW (Hanya muncul jika sudah mengisi) */}
+                          {student.bmw_mapping && (
+                            <button
+                              onClick={() => { 
+                                navigate(`/teacher/students/${student.id}/bmw`); 
+                                setOpenMenu(null); 
+                              }}
+                              className="flex items-center gap-2 px-4 py-3 w-full hover:bg-emerald-50 text-emerald-700 font-medium transition-colors text-sm border-b border-slate-100"
+                            >
+                              <Briefcase className="w-4 h-4" /> Detail BMW
+                            </button>
+                          )}
+
                           <button
                             onClick={() => { setEditStudent(student); setOpenMenu(null); }}
                             className="flex items-center gap-2 px-4 py-3 w-full hover:bg-slate-50 text-slate-700 font-medium transition-colors text-sm border-b border-slate-100"
@@ -319,112 +326,8 @@ export function StudentsList() {
             isLoading={isLoading}
           />
         )}
-        {viewBmwStudent && (
-          <BmwDetailModal
-            student={viewBmwStudent}
-            onClose={() => setViewBmwStudent(null)}
-          />
-        )}
       </AnimatePresence>
     </div>
-  );
-}
-
-// ── KOMPONEN BMW DETAIL MODAL ──
-function BmwDetailModal({ student, onClose }: { student: StudentItem; onClose: () => void }) {
-  const bmw = student.bmw_mapping;
-  if (!bmw) return null;
-
-  const openQuestions = [
-    { key: 'q1', text: 'Rencana setelah lulus SMK' },
-    { key: 'q2', text: 'Pertimbangan mengambil rencana tersebut' },
-    { key: 'q3', text: 'Rencana yang disarankan orang tua' },
-    { key: 'q4', text: 'Alasan orang tua menyarankan rencana tersebut' },
-    { key: 'q5', text: 'Cita-cita yang ingin dicapai' },
-  ];
-
-  // Konversi ke persentase
-  const bPct = Math.round(((bmw.bekerja_score || 0) / 15) * 100);
-  const mPct = Math.round(((bmw.melanjutkan_score || 0) / 15) * 100);
-  const wPct = Math.round(((bmw.wirausaha_score || 0) / 15) * 100);
-
-  // Cek kategori dominan untuk memberikan warna hijau
-  const dominant = bmw.dominant_result?.toLowerCase() || '';
-  const isBekerjaDom = dominant === 'bekerja';
-  const isMelanjutkanDom = dominant === 'melanjutkan';
-  const isWirausahaDom = dominant === 'wirausaha';
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] px-4 py-6"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
-      >
-        <div className="flex justify-between items-center p-6 border-b border-slate-100 shrink-0">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-emerald-600" /> Hasil Pemetaan Karier BMW
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">{student.name}</p>
-          </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-full transition">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="p-6 overflow-y-auto space-y-8 flex-1">
-          {/* Skor Bagian */}
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Kecenderungan Minat</h3>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              
-              {/* Kotak Bekerja */}
-              <div className={`p-4 rounded-xl border transition-colors ${isBekerjaDom ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
-                <div className={`text-xs font-semibold mb-1 ${isBekerjaDom ? 'text-emerald-600' : 'text-slate-500'}`}>Bekerja</div>
-                <div className={`text-2xl font-bold ${isBekerjaDom ? 'text-emerald-700' : 'text-slate-700'}`}>{bPct}%</div>
-              </div>
-
-              {/* Kotak Melanjutkan */}
-              <div className={`p-4 rounded-xl border transition-colors ${isMelanjutkanDom ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
-                <div className={`text-xs font-semibold mb-1 ${isMelanjutkanDom ? 'text-emerald-600' : 'text-slate-500'}`}>Melanjutkan</div>
-                <div className={`text-2xl font-bold ${isMelanjutkanDom ? 'text-emerald-700' : 'text-slate-700'}`}>{mPct}%</div>
-              </div>
-
-              {/* Kotak Wirausaha */}
-              <div className={`p-4 rounded-xl border transition-colors ${isWirausahaDom ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
-                <div className={`text-xs font-semibold mb-1 ${isWirausahaDom ? 'text-emerald-600' : 'text-slate-500'}`}>Wirausaha</div>
-                <div className={`text-2xl font-bold ${isWirausahaDom ? 'text-emerald-700' : 'text-slate-700'}`}>{wPct}%</div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* Jawaban Terbuka */}
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Jawaban Refleksi (Esai)</h3>
-            <div className="space-y-4">
-              {openQuestions.map((q, i) => (
-                <div key={q.key} className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <div className="text-xs font-semibold text-slate-500 mb-2">{i + 1}. {q.text}</div>
-                  <div className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
-                    {bmw.open_answers?.[q.key] || <span className="italic text-slate-400">Tidak ada jawaban</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
   );
 }
 

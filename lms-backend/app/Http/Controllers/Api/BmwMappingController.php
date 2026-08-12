@@ -49,6 +49,7 @@ class BmwMappingController extends Controller
         $mapping = BmwMapping::create([
             'user_id'           => $user->id,
             'open_answers'      => $request->open_answers,
+            'closed_answers'    => $request->answers, 
             'bekerja_score'     => $bekerjaScore,
             'melanjutkan_score' => $melanjutkanScore,
             'wirausaha_score'   => $wirausahaScore,
