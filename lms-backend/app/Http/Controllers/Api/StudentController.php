@@ -14,7 +14,8 @@ class StudentController extends Controller
         $students = User::where('role', 'siswa')
             ->with([
                 'learningStyle',
-                'class'
+                'class',
+                'bmwMapping' 
             ])
             ->get()
             ->map(fn($student) => [
@@ -25,6 +26,14 @@ class StudentController extends Controller
                 'class' => $student->class ? [
                     'id' => $student->class->id,
                     'name' => $student->class->name,
+                ] : null,
+
+                'bmw_mapping' => $student->bmwMapping ? [
+                    'dominant_result' => $student->bmwMapping->dominant_result,
+                    'bekerja_score' => $student->bmwMapping->bekerja_score,
+                    'melanjutkan_score' => $student->bmwMapping->melanjutkan_score,
+                    'wirausaha_score' => $student->bmwMapping->wirausaha_score,
+                    'open_answers' => $student->bmwMapping->open_answers,
                 ] : null,
             ])
             ->toArray();

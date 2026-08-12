@@ -145,74 +145,38 @@ class AuthController extends Controller
         ]);
     }
 
-
-
-
-
     private function formatUser(User $user): array
     {
         $style = $user->learningStyle;
-
+        $bmw = $user->bmwMapping;
 
         return [
-
-            'id' =>
-                $user->id,
-
-
-            'name' =>
-                $user->name,
-
-
-            'email' =>
-                $user->email,
-
-
-            'role' =>
-                $user->role,
-
-
-            'class' =>
-                $user->class ? [
-
-                    'id' =>
-                        $user->class->id,
-
-                    'name' =>
-                        $user->class->name,
-
-                    'grade' =>
-                        $user->class->grade,
-
-                    'major' =>
-                        $user->class->major,
-
-                ] : null,
-
-
-
-            'has_learning_style' =>
-                !is_null($style),
-
-
-
-            'learning_style' =>
-                $style ? [
-
-                    'result' =>
-                        strtolower($style->result),
-
-                    'visual_percentage' =>
-                        $style->visual_percentage,
-
-                    'auditory_percentage' =>
-                        $style->auditory_percentage,
-
-                    'kinesthetic_percentage'=>
-                        $style->kinesthetic_percentage,
-
-                ] : null,
-
+            'id'    => $user->id,
+            'name'  => $user->name,
+            'email' => $user->email,
+            'role'  => $user->role,
+            'class' => $user->class ? [
+                'id'    => $user->class->id,
+                'name'  => $user->class->name,
+                'grade' => $user->class->grade,
+                'major' => $user->class->major,
+            ] : null,
+            'has_learning_style' => !is_null($style),
+            'learning_style'     => $style ? [
+                'result'                 => strtolower($style->result),
+                'visual_percentage'      => $style->visual_percentage,
+                'auditory_percentage'    => $style->auditory_percentage,
+                'kinesthetic_percentage' => $style->kinesthetic_percentage,
+            ] : null,
+            
+            'has_bmw_mapping' => !is_null($bmw),
+            'bmw_mapping'     => $bmw ? [
+                'dominant_result'   => $bmw->dominant_result,
+                // Tambahkan 3 baris skor ini agar terbaca di persentase frontend
+                'bekerja_score'     => $bmw->bekerja_score,
+                'melanjutkan_score' => $bmw->melanjutkan_score,
+                'wirausaha_score'   => $bmw->wirausaha_score,
+            ] : null,
         ];
     }
 }

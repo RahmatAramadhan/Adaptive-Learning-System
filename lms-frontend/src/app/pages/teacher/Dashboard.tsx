@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { useNavigate } from 'react-router';
 import { Users, BookOpen, Activity, TrendingUp, Edit, ArrowRight } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../../../lib/api';
 
 interface StudentItem {
@@ -10,6 +10,9 @@ interface StudentItem {
   name: string;
   email: string;
   learning_style: string | null;
+  bmw_mapping?: {
+    dominant_result: string;
+  } | null;
 }
 
 export function TeacherDashboard() {
@@ -18,22 +21,31 @@ export function TeacherDashboard() {
   const [students, setStudents] = useState<StudentItem[]>([]);
 
   useEffect(() => {
+    // Pastikan API memanggil data dengan relasi bmwMapping (sudah kita setting sebelumnya)
     api.get('/students')
       .then(res => setStudents(res.data))
-      .catch(() => {}); // fallback kosong jika API belum ada data
+      .catch(() => {});
   }, []);
 
+  // Data Grafik Gaya Belajar
   const styleData = [
     { name: 'Visual',       students: students.filter(s => s.learning_style?.toLowerCase() === 'visual').length },
-    { name: 'Auditory',     students: students.filter(s => ['auditori','auditory'].includes(s.learning_style?.toLowerCase() ?? '')).length },
-    { name: 'Kinesthetic',  students: students.filter(s => ['kinestetik','kinesthetic'].includes(s.learning_style?.toLowerCase() ?? '')).length },
+    { name: 'Auditori',     students: students.filter(s => ['auditori','auditory'].includes(s.learning_style?.toLowerCase() ?? '')).length },
+    { name: 'Kinestetik',   students: students.filter(s => ['kinestetik','kinesthetic'].includes(s.learning_style?.toLowerCase() ?? '')).length },
+  ];
+
+  // Data Grafik Pemetaan BMW
+  const bmwData = [
+    { name: 'Bekerja',     students: students.filter(s => s.bmw_mapping?.dominant_result?.toLowerCase() === 'bekerja').length },
+    { name: 'Melanjutkan', students: students.filter(s => s.bmw_mapping?.dominant_result?.toLowerCase() === 'melanjutkan').length },
+    { name: 'Wirausaha',   students: students.filter(s => s.bmw_mapping?.dominant_result?.toLowerCase() === 'wirausaha').length },
   ];
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Instructor Dashboard</h1>
-        <p className="text-slate-500">Monitor student progress and learning styles.</p>
+        <p className="text-slate-500">Monitor student progress, learning styles, and career mapping.</p>
       </div>
 
       {/* Stats Cards */}
@@ -44,58 +56,72 @@ export function TeacherDashboard() {
         <StatCard icon={TrendingUp} label="Avg. Score" value="78/100" color="orange" />
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Learning Style Distribution Chart */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <h3 className="font-bold text-lg text-slate-900 mb-6">Learning Style Distribution</h3>
+      <div className="grid lg:grid-cols-2 gap-8">
+        
+        {/* =========================================
+            GRAFIK 1: DISTRIBUSI GAYA BELAJAR
+        ========================================= */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+          <h3 className="font-bold text-lg text-slate-900 mb-6">Distribusi Gaya Belajar</h3>
+          
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={styleData}>
+              <BarChart data={styleData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} allowDecimals={false} />
                 <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   cursor={{ fill: '#F1F5F9' }}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  formatter={(value) => [`${value} Siswa`, 'Jumlah']}
                 />
-                <Bar dataKey="students" fill="#6366f1" radius={[6, 6, 0, 0]} barSize={40} />
+                <Bar dataKey="students" fill="#6366f1" radius={[6, 6, 0, 0]} barSize={45} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="grid grid-cols-3 gap-4 mt-4">
+          
+          <div className="grid grid-cols-3 gap-4 mt-6">
             {styleData.map((item) => (
-              <div 
-                key={item.name}
-                className="text-center bg-slate-50 rounded-xl p-3"
-              >
-                <p className="text-sm text-slate-500">
-                  {item.name}
-                </p>
-                <p className="text-xl font-bold text-indigo-600">
-                  {item.students}
-                </p>
-                <p className="text-xs text-slate-400">
-                  siswa
-                </p>
+              <div key={item.name} className="text-center bg-indigo-50/50 border border-indigo-100 rounded-xl p-3 transition-colors hover:bg-indigo-50">
+                <p className="text-sm text-slate-500 font-medium mb-1">{item.name}</p>
+                <p className="text-2xl font-bold text-indigo-600">{item.students}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Recent Activity / Quick Actions */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-           <h3 className="font-bold text-lg text-slate-900 mb-6">Quick Actions</h3>
-           <div className="space-y-4">
-             <button className="w-full text-left p-4 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors flex items-center justify-between group">
-               <span className="font-medium text-slate-700 group-hover:text-indigo-700">Add New Course Module</span>
-               <span className="text-2xl text-slate-400 group-hover:text-indigo-400">+</span>
-             </button>
-             <button className="w-full text-left p-4 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-colors flex items-center justify-between group">
-               <span className="font-medium text-slate-700 group-hover:text-indigo-700">Review Student Assessments</span>
-               <span className="text-2xl text-slate-400 group-hover:text-indigo-400">→</span>
-             </button>
-           </div>
+        {/* =========================================
+            GRAFIK 2: SEBARAN PEMETAAN KARIER (BMW)
+        ========================================= */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+          <h3 className="font-bold text-lg text-slate-900 mb-6">Sebaran Pemetaan Karier BMW</h3>
+          
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={bmwData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} allowDecimals={false} />
+                <Tooltip 
+                  cursor={{ fill: '#F1F5F9' }}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  formatter={(value) => [`${value} Siswa`, 'Jumlah']}
+                />
+                <Bar dataKey="students" fill="#10b981" radius={[6, 6, 0, 0]} barSize={45} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-4 mt-6">
+            {bmwData.map((item) => (
+              <div key={item.name} className="text-center bg-emerald-50/50 border border-emerald-100 rounded-xl p-3 transition-colors hover:bg-emerald-50">
+                <p className="text-sm text-slate-500 font-medium mb-1">{item.name}</p>
+                <p className="text-2xl font-bold text-emerald-600">{item.students}</p>
+              </div>
+            ))}
+          </div>
         </div>
+        
       </div>
 
       {/* Courses List Section */}
@@ -104,7 +130,7 @@ export function TeacherDashboard() {
           <h3 className="font-bold text-lg text-slate-900">My Courses</h3>
           <button 
             onClick={() => navigate('/teacher/add-learning')}
-            className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+            className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-4 py-2 rounded-lg transition-colors"
           >
             + Add New Course
           </button>
@@ -170,7 +196,7 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any, label: strin
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 transition-shadow hover:shadow-md">
       <div className={`p-4 rounded-xl ${colors[color]}`}>
         <Icon className="w-6 h-6" />
       </div>

@@ -39,4 +39,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Course::class, 'created_by');
     }
+
+    public function bmwMapping()
+    {
+        return $this->hasOne(BmwMapping::class);
+    }
 }

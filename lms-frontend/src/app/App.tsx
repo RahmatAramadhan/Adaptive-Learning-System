@@ -22,6 +22,7 @@ import { EvaluationsManagement } from './pages/teacher/EvaluationsManagement';
 import { EditEvaluation } from './pages/teacher/EditEvaluation';
 import { StudentResultsReview } from './pages/teacher/StudentResultsReview';
 import { ModulesManagement } from './pages/teacher/ModulesManagement';
+import { BmwMapping } from './pages/BmwMapping'; // Sesuaikan path jika berbeda
 import { Toaster } from 'sonner';
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
@@ -38,13 +39,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (!currentUser) {
     return <Navigate to="/login" replace />;
-  }
-
-  if (
-    currentUser.role === 'siswa' &&
-    !currentUser.has_learning_style
-  ) {
-    return <Navigate to="/questionnaire" replace />;
   }
 
   return <>{children}</>;
@@ -76,14 +70,7 @@ function RootRedirect() {
   if (!currentUser) {
     return <Navigate to="/login" replace />;
   }
-
-  if (
-    currentUser.role === 'siswa' &&
-    !currentUser.has_learning_style
-  ) {
-    return <Navigate to="/questionnaire" replace />;
-  }
-
+  
   if (currentUser.role === 'guru') {
     return <Navigate to="/teacher" replace />;
   }
@@ -114,6 +101,16 @@ const router = createBrowserRouter([
       {
         path: 'questionnaire',
         Component: QuestionnaireGuard,
+      },
+      {
+        path: 'bmw-mapping',
+        element: (
+          <AuthGuard>
+            <RoleGuard role="siswa">
+              <BmwMapping />
+            </RoleGuard>
+          </AuthGuard>
+        ),
       },
 
       // Student

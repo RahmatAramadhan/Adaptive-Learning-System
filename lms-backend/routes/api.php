@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\QuestionnaireController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\UploadController;
 use App\Http\Controllers\Api\ClassController;
+use App\Http\Controllers\Api\BmwMappingController;
 use Illuminate\Support\Facades\Route;
 
 // ── Handle CORS preflight ────────────────────────────────────────────────────
@@ -24,6 +25,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me',      [AuthController::class, 'me']);
+    
+    // ── Kuesioner (siswa) ────────────────────────────────────────────────────
+    Route::get('/questionnaire/status', [QuestionnaireController::class, 'status']);
+    Route::post('/questionnaire/submit', [QuestionnaireController::class, 'submit']);
+
+    // ── Pemetaan BMW ─────────────────────────────────────────────────────────
+    Route::post('/bmw-mapping/submit', [BmwMappingController::class, 'submit']);
 
     // ── File Upload ──────────────────────────────────────────────────────────
     Route::post('/upload', [UploadController::class, 'store']);

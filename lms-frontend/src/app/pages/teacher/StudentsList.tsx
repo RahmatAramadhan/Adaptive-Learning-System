@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, MoreHorizontal, ChevronDown, Eye, Headphones, Hand, Edit2, Trash2, X } from 'lucide-react';
+import { Search, MoreHorizontal, ChevronDown, Eye, Headphones, Hand, Edit2, Trash2, X, Briefcase } from 'lucide-react';
 import api from '../../../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -13,6 +13,14 @@ interface StudentItem {
     id: number;
     name: string;
   } | null;
+
+  bmw_mapping?: {
+    dominant_result: string;
+    bekerja_score: number;
+    melanjutkan_score: number;
+    wirausaha_score: number;
+    open_answers: Record<string, string>;
+  } | null;
 }
 
 export function StudentsList() {
@@ -23,6 +31,7 @@ export function StudentsList() {
   const [openMenu, setOpenMenu] = useState<number | null>(null);
   const [editStudent, setEditStudent] = useState<StudentItem | null>(null);
   const [deleteStudent, setDeleteStudent] = useState<StudentItem | null>(null);
+  const [viewBmwStudent, setViewBmwStudent] = useState<StudentItem | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -38,42 +47,17 @@ export function StudentsList() {
 
   const filtered = students.filter((student) => {
     const matchSearch =
-      student.name
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      student.email
-        .toLowerCase()
-        .includes(search.toLowerCase());
+      student.name.toLowerCase().includes(search.toLowerCase()) ||
+      student.email.toLowerCase().includes(search.toLowerCase());
 
-    const matchClass =
-      !classFilter ||
-      student.class?.name === classFilter;
+    const matchClass = !classFilter || student.class?.name === classFilter;
+    const matchStyle = !styleFilter || student.learning_style?.toLowerCase() === styleFilter.toLowerCase();
 
-    const matchStyle =
-      !styleFilter ||
-      student.learning_style?.toLowerCase() ===
-        styleFilter.toLowerCase();
-
-    return (
-      matchSearch &&
-      matchClass &&
-      matchStyle
-    );
+    return matchSearch && matchClass && matchStyle;
   });
 
-const classOptions = [
-  ...new Set(
-    students
-      .map((s) => s.class?.name)
-      .filter(Boolean)
-  ),
-];
-
-const learningStyleOptions = [
-  'Visual',
-  'Auditori',
-  'Kinestetik',
-];    
+  const classOptions = [...new Set(students.map((s) => s.class?.name).filter(Boolean))];
+  const learningStyleOptions = ['Visual', 'Auditori', 'Kinestetik'];    
 
   const handleEditSave = async (updatedStudent: StudentItem) => {
     try {
@@ -82,7 +66,6 @@ const learningStyleOptions = [
         name: updatedStudent.name,
         email: updatedStudent.email,
       });
-      
       setStudents(students.map(s => s.id === updatedStudent.id ? updatedStudent : s));
       setEditStudent(null);
     } catch (error) {
@@ -96,7 +79,6 @@ const learningStyleOptions = [
     try {
       setIsLoading(true);
       await api.delete(`/students/${student.id}`);
-      
       setStudents(students.filter(s => s.id !== student.id));
       setDeleteStudent(null);
       setOpenMenu(null);
@@ -111,7 +93,6 @@ const learningStyleOptions = [
     try {
       setIsLoading(true);
       const response = await api.post('/students', formData);
-      
       setStudents([...students, response.data]);
       setShowAddModal(false);
     } catch (error) {
@@ -122,12 +103,7 @@ const learningStyleOptions = [
   };
 
   const formatName = (name: string) => {
-    return name
-      .toLowerCase()
-      .split(' ')
-      .filter(Boolean)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    return name.toLowerCase().split(' ').filter(Boolean).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
   return (
@@ -148,10 +124,8 @@ const learningStyleOptions = [
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-visible">
         <div className="p-4 border-b border-slate-200 flex gap-4 flex-wrap">
 
-          {/* Search */}
           <div className="relative flex-1 min-w-[260px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-
             <input
               type="text"
               placeholder="Cari siswa..."
@@ -161,24 +135,19 @@ const learningStyleOptions = [
             />
           </div>
 
-          {/* Filter Kelas */}
           <div className="relative">
             <select
               value={classFilter}
               onChange={(e) => setClassFilter(e.target.value)}
               className="appearance-none w-52 px-4 pr-10 py-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500">
               <option value="">Semua Kelas</option>
-
               {classOptions.map((kelas) => (
-                <option key={kelas} value={kelas}>
-                  {kelas}
-                </option>
+                <option key={kelas} value={kelas}>{kelas}</option>
               ))}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
           </div>
 
-          {/* Filter Gaya Belajar */}
           <div className="relative">
             <select
               value={styleFilter}
@@ -186,22 +155,21 @@ const learningStyleOptions = [
               className="appearance-none w-52 px-4 pr-10 py-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500">
               <option value="">Semua Gaya Belajar</option>
               {learningStyleOptions.map((style) => (
-                <option key={style} value={style}>
-                  {style}
-                </option>
+                <option key={style} value={style}>{style}</option>
               ))}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
           </div>
         </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left">
           <thead className="bg-slate-50 text-slate-500 font-medium text-sm">
           <tr>
               <th className="px-6 py-4">Nama</th>
-              <th className="px-6 py-4">Email</th>
               <th className="px-6 py-4">Kelas</th>
               <th className="px-6 py-4">Gaya Belajar</th>
+              <th className="px-6 py-4">Pemetaan BMW</th>
               <th className="px-6 py-4">Progress</th>
               <th className="px-6 py-4"></th>
           </tr>
@@ -219,17 +187,17 @@ const learningStyleOptions = [
                     <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
                       {formatName(student.name).charAt(0)}
                     </div>
-                    <span className="font-semibold text-slate-900">{formatName(student.name)}</span>
+                    <div>
+                      <div className="font-semibold text-slate-900">{formatName(student.name)}</div>
+                      <div className="text-xs text-slate-500">{student.email}</div>
+                    </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-slate-500">{student.email}</td>
                 <td className="px-6 py-4">
                   {student.class ? (<span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
                       {student.class.name}
                     </span>) : (
-                    <span className="text-slate-400 italic">
-                      Belum memiliki kelas
-                    </span>
+                    <span className="text-slate-400 italic text-sm">Belum ada kelas</span>
                   )}
                 </td>
                 <td className="px-6 py-4">
@@ -247,9 +215,30 @@ const learningStyleOptions = [
                     {(style.includes('kinestet') || style.includes('kinesth')) && <Hand className="w-4 h-4 text-orange-500" />}
                   </div>
                 </td>
+                
+                {/* Kolom BMW Mapping */}
+                <td className="px-6 py-4">
+                  {student.bmw_mapping ? (
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                        {student.bmw_mapping.dominant_result}
+                      </span>
+                      <button 
+                        onClick={() => setViewBmwStudent(student)}
+                        className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
+                        title="Lihat Detail BMW"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-slate-400 text-sm italic">Belum diisi</span>
+                  )}
+                </td>
+
                 <td className="px-6 py-4">
                   <div className="w-24 bg-slate-200 rounded-full h-2 overflow-hidden">
-                    <div className="bg-emerald-500 h-full w-[75%] rounded-full"></div>
+                    <div className="bg-indigo-500 h-full w-[75%] rounded-full"></div>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-right relative">
@@ -261,29 +250,22 @@ const learningStyleOptions = [
                       <MoreHorizontal className="w-5 h-5" />
                     </button>
                     
-                    {/* Dropdown Menu - Fixed positioning to avoid clipping */}
                     <AnimatePresence>
                       {openMenu === student.id && (
                         <motion.div
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
-                          className="absolute -right-2 top-full mt-1 w-40 bg-white rounded-lg shadow-xl border border-slate-200 z-50"
+                          className="absolute -right-2 top-full mt-1 w-40 bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden"
                         >
                           <button
-                            onClick={() => {
-                              setEditStudent(student);
-                              setOpenMenu(null);
-                            }}
+                            onClick={() => { setEditStudent(student); setOpenMenu(null); }}
                             className="flex items-center gap-2 px-4 py-3 w-full hover:bg-slate-50 text-slate-700 font-medium transition-colors text-sm border-b border-slate-100"
                           >
                             <Edit2 className="w-4 h-4" /> Edit
                           </button>
                           <button
-                            onClick={() => {
-                              setDeleteStudent(student);
-                              setOpenMenu(null);
-                            }}
+                            onClick={() => { setDeleteStudent(student); setOpenMenu(null); }}
                             className="flex items-center gap-2 px-4 py-3 w-full hover:bg-red-50 text-red-600 font-medium transition-colors text-sm"
                           >
                             <Trash2 className="w-4 h-4" /> Delete
@@ -301,7 +283,7 @@ const learningStyleOptions = [
         </div>
       </div>
 
-      {/* Edit Modal */}
+      {/* Edit & Delete Modals ... */}
       <AnimatePresence>
         {editStudent && (
           <EditStudentModal
@@ -311,10 +293,6 @@ const learningStyleOptions = [
             isLoading={isLoading}
           />
         )}
-      </AnimatePresence>
-
-      {/* Delete Confirmation Dialog */}
-      <AnimatePresence>
         {deleteStudent && (
           <DeleteConfirmDialog
             student={deleteStudent}
@@ -323,10 +301,6 @@ const learningStyleOptions = [
             isLoading={isLoading}
           />
         )}
-      </AnimatePresence>
-
-      {/* Add Student Modal */}
-      <AnimatePresence>
         {showAddModal && (
           <AddStudentModal
             onClose={() => setShowAddModal(false)}
@@ -334,42 +308,47 @@ const learningStyleOptions = [
             isLoading={isLoading}
           />
         )}
+        {viewBmwStudent && (
+          <BmwDetailModal
+            student={viewBmwStudent}
+            onClose={() => setViewBmwStudent(null)}
+          />
+        )}
       </AnimatePresence>
     </div>
   );
 }
 
-function EditStudentModal({ 
-  student, 
-  onClose, 
-  onSave, 
-  isLoading 
-}: { 
-  student: StudentItem; 
-  onClose: () => void; 
-  onSave: (student: StudentItem) => void;
-  isLoading: boolean;
-}) {
-  const [formData, setFormData] = useState({
-    name: student.name,
-    email: student.email,
-  });
+// ── KOMPONEN BMW DETAIL MODAL ──
+function BmwDetailModal({ student, onClose }: { student: StudentItem; onClose: () => void }) {
+  const bmw = student.bmw_mapping;
+  if (!bmw) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave({
-      ...student,
-      name: formData.name,
-      email: formData.email,
-    });
-  };
+  const openQuestions = [
+    { key: 'q1', text: 'Rencana setelah lulus SMK' },
+    { key: 'q2', text: 'Pertimbangan mengambil rencana tersebut' },
+    { key: 'q3', text: 'Rencana yang disarankan orang tua' },
+    { key: 'q4', text: 'Alasan orang tua menyarankan rencana tersebut' },
+    { key: 'q5', text: 'Cita-cita yang ingin dicapai' },
+  ];
+
+  // Konversi ke persentase
+  const bPct = Math.round(((bmw.bekerja_score || 0) / 15) * 100);
+  const mPct = Math.round(((bmw.melanjutkan_score || 0) / 15) * 100);
+  const wPct = Math.round(((bmw.wirausaha_score || 0) / 15) * 100);
+
+  // Cek kategori dominan untuk memberikan warna hijau
+  const dominant = bmw.dominant_result?.toLowerCase() || '';
+  const isBekerjaDom = dominant === 'bekerja';
+  const isMelanjutkanDom = dominant === 'melanjutkan';
+  const isWirausahaDom = dominant === 'wirausaha';
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] px-4 py-6"
       onClick={onClose}
     >
       <motion.div
@@ -377,216 +356,109 @@ function EditStudentModal({
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md"
+        className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
       >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-900">Edit Student</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-            <X className="w-6 h-6" />
+        <div className="flex justify-between items-center p-6 border-b border-slate-100 shrink-0">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-emerald-600" /> Hasil Pemetaan Karier BMW
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">{student.name}</p>
+          </div>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-full transition">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
+        <div className="p-6 overflow-y-auto space-y-8 flex-1">
+          {/* Skor Bagian */}
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Kecenderungan Minat</h3>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              
+              {/* Kotak Bekerja */}
+              <div className={`p-4 rounded-xl border transition-colors ${isBekerjaDom ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
+                <div className={`text-xs font-semibold mb-1 ${isBekerjaDom ? 'text-emerald-600' : 'text-slate-500'}`}>Bekerja</div>
+                <div className={`text-2xl font-bold ${isBekerjaDom ? 'text-emerald-700' : 'text-slate-700'}`}>{bPct}%</div>
+              </div>
+
+              {/* Kotak Melanjutkan */}
+              <div className={`p-4 rounded-xl border transition-colors ${isMelanjutkanDom ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
+                <div className={`text-xs font-semibold mb-1 ${isMelanjutkanDom ? 'text-emerald-600' : 'text-slate-500'}`}>Melanjutkan</div>
+                <div className={`text-2xl font-bold ${isMelanjutkanDom ? 'text-emerald-700' : 'text-slate-700'}`}>{mPct}%</div>
+              </div>
+
+              {/* Kotak Wirausaha */}
+              <div className={`p-4 rounded-xl border transition-colors ${isWirausahaDom ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
+                <div className={`text-xs font-semibold mb-1 ${isWirausahaDom ? 'text-emerald-600' : 'text-slate-500'}`}>Wirausaha</div>
+                <div className={`text-2xl font-bold ${isWirausahaDom ? 'text-emerald-700' : 'text-slate-700'}`}>{wPct}%</div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Jawaban Terbuka */}
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Jawaban Refleksi (Esai)</h3>
+            <div className="space-y-4">
+              {openQuestions.map((q, i) => (
+                <div key={q.key} className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                  <div className="text-xs font-semibold text-slate-500 mb-2">{i + 1}. {q.text}</div>
+                  <div className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
+                    {bmw.open_answers?.[q.key] || <span className="italic text-slate-400">Tidak ada jawaban</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ── KOMPONEN LAMA (JANGAN DIUBAH) ──
+
+function EditStudentModal({ student, onClose, onSave, isLoading }: any) {
+  const [formData, setFormData] = useState({ name: student.name, email: student.email });
+  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave({ ...student, ...formData }); };
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+        <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-slate-900">Edit Student</h2><button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-6 h-6" /></button></div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              required
-            />
-          </div>
-
-          <div className="flex gap-2 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
-              disabled={isLoading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors disabled:opacity-50"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
+          <div><label className="block text-sm font-medium text-slate-700 mb-2">Name</label><input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required /></div>
+          <div><label className="block text-sm font-medium text-slate-700 mb-2">Email</label><input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required /></div>
+          <div className="flex gap-2 pt-4"><button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50" disabled={isLoading}>Cancel</button><button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Changes'}</button></div>
         </form>
       </motion.div>
     </motion.div>
   );
 }
 
-function DeleteConfirmDialog({ 
-  student, 
-  onClose, 
-  onConfirm, 
-  isLoading 
-}: { 
-  student: StudentItem; 
-  onClose: () => void; 
-  onConfirm: () => void;
-  isLoading: boolean;
-}) {
+function DeleteConfirmDialog({ student, onClose, onConfirm, isLoading }: any) {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md"
-      >
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Delete Student</h2>
-          <p className="text-slate-600">
-            Are you sure you want to delete <span className="font-semibold">{student.name}</span>? This action cannot be undone.
-          </p>
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
-            disabled={isLoading}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors disabled:opacity-50"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+        <div className="mb-6"><h2 className="text-2xl font-bold text-slate-900 mb-2">Delete Student</h2><p className="text-slate-600">Are you sure you want to delete <span className="font-semibold">{student.name}</span>? This action cannot be undone.</p></div>
+        <div className="flex gap-2"><button onClick={onClose} className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50" disabled={isLoading}>Cancel</button><button onClick={onConfirm} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700" disabled={isLoading}>{isLoading ? 'Deleting...' : 'Delete'}</button></div>
       </motion.div>
     </motion.div>
   );
 }
 
-function AddStudentModal({ 
-  onClose, 
-  onSubmit, 
-  isLoading 
-}: { 
-  onClose: () => void; 
-  onSubmit: (data: { name: string; email: string; password: string }) => void;
-  isLoading: boolean;
-}) {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.name && formData.email && formData.password) {
-      onSubmit(formData);
-      setFormData({ name: '', email: '', password: '' });
-    }
-  };
-
+function AddStudentModal({ onClose, onSubmit, isLoading }: any) {
+  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); if (formData.name && formData.email && formData.password) { onSubmit(formData); setFormData({ name: '', email: '', password: '' }); } };
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md"
-      >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-900">Add New Student</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+        <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-slate-900">Add New Student</h2><button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-6 h-6" /></button></div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Full Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., John Doe"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="e.g., john@example.com"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              placeholder="Minimum 8 characters"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              required
-              minLength={8}
-            />
-            <p className="text-xs text-slate-500 mt-1">Minimum 8 characters</p>
-          </div>
-
-          <div className="flex gap-2 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition-colors"
-              disabled={isLoading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors disabled:opacity-50"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Creating...' : 'Create Student'}
-            </button>
-          </div>
+          <div><label className="block text-sm font-medium text-slate-700 mb-2">Full Name</label><input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required /></div>
+          <div><label className="block text-sm font-medium text-slate-700 mb-2">Email</label><input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required /></div>
+          <div><label className="block text-sm font-medium text-slate-700 mb-2">Password</label><input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required minLength={8} /></div>
+          <div className="flex gap-2 pt-4"><button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50" disabled={isLoading}>Cancel</button><button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700" disabled={isLoading}>{isLoading ? 'Creating...' : 'Create Student'}</button></div>
         </form>
       </motion.div>
     </motion.div>

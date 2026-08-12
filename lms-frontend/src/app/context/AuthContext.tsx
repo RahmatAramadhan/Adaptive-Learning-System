@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import api, { csrf } from '@/lib/api';
+import api from '@/lib/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface AuthUser {
@@ -11,15 +11,25 @@ export interface AuthUser {
   class: {
     id: number;
     name: string;
+    grade: string;
+    major: string;
   } | null;
 
   has_learning_style: boolean;
-
   learning_style: {
     result: 'visual' | 'auditori' | 'kinestetik';
     visual_percentage: number;
     auditory_percentage: number;
     kinesthetic_percentage: number;
+  } | null;
+
+  has_bmw_mapping: boolean;
+  bmw_mapping: {
+    dominant_result: string;
+    bekerja_score: number;
+    melanjutkan_score: number;
+    wirausaha_score: number;
+    open_answers: Record<string, string>;
   } | null;
 }
 
@@ -128,7 +138,7 @@ export function AuthProvider({
     password: string
   ) => {
     // Ambil CSRF cookie sebelum request login
-    await csrf.get('/sanctum/csrf-cookie');
+   
 
     const res = await api.post(
       '/login',
@@ -153,7 +163,7 @@ export function AuthProvider({
     role = 'siswa'
   ) => {
     // Ambil CSRF cookie sebelum request register
-    await csrf.get('/sanctum/csrf-cookie');
+    
 
     const res = await api.post(
       '/register',
