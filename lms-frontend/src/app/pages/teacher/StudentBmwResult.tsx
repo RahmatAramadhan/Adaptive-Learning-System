@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { ArrowLeft, Briefcase, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Briefcase, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
 import api from '../../../lib/api';
 
 interface StudentDetail {
@@ -23,6 +24,27 @@ export function StudentBmwResult() {
   const navigate = useNavigate();
   const [student, setStudent] = useState<StudentDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isResetting, setIsResetting] = useState(false); 
+
+  const handleResetBmw = async () => {
+    const confirmReset = window.confirm(
+      "Apakah Anda yakin ingin mereset data Pemetaan BMW siswa ini? Siswa harus mengisi kuesioner dari awal."
+    );
+
+    if (!confirmReset) return;
+
+    setIsResetting(true);
+    try {
+      await api.delete(`/students/${id}/bmw`);
+      toast.success('Data BMW berhasil direset!');
+      navigate('/teacher/students');
+    } catch (error) {
+      console.error(error);
+      toast.error('Gagal mereset data BMW.');
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   useEffect(() => {
     api.get(`/students/${id}`)
@@ -70,20 +92,30 @@ export function StudentBmwResult() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <button 
-          onClick={() => navigate('/teacher/students')}
-          className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-slate-600" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Briefcase className="w-6 h-6 text-emerald-600" /> Detail Pemetaan BMW
-          </h1>
-          <p className="text-slate-500">{student.name} • {student.class?.name || 'Belum ada kelas'}</p>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate('/teacher/students')}
+            className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              <Briefcase className="w-6 h-6 text-emerald-600" /> Detail Pemetaan BMW
+            </h1>
+            <p className="text-slate-500">{student.name} • {student.class?.name || 'Belum ada kelas'}</p>
+          </div>
         </div>
+
+        <button
+          onClick={handleResetBmw}
+          disabled={isResetting}
+          className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 font-semibold rounded-lg transition-colors border border-red-200 disabled:opacity-50"
+        >
+          <RotateCcw className={`w-4 h-4 ${isResetting ? 'animate-spin' : ''}`} />
+          {isResetting ? 'Mereset...' : 'Reset Data BMW'}
+        </button>
       </div>
 
       {/* Ringkasan Skor */}

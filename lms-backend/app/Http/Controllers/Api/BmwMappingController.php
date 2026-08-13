@@ -67,4 +67,20 @@ class BmwMappingController extends Controller
             ],
         ]);
     }
+    
+    public function reset($studentId)
+    {
+        // Hapus data BMW milik user_id tersebut
+        $deleted = BmwMapping::where('user_id', $studentId)->delete();
+
+        if ($deleted) {
+            return response()->json([
+                'message' => 'Data Pemetaan BMW berhasil direset. Siswa kini dapat mengisi ulang.'
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Data tidak ditemukan atau sudah kosong.'
+        ], 404);
+    }
 }

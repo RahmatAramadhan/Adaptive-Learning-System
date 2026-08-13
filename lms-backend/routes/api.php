@@ -85,6 +85,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/classes/{id}/students',      [ClassController::class, 'showStudents']);
         Route::get('/teachers',                   [ClassController::class, 'teachers']);
         Route::delete('/classes/{id}',            [ClassController::class, 'destroy']);
+
+        //BMW
+        Route::delete('/students/{id}/bmw', [App\Http\Controllers\Api\BmwMappingController::class, 'reset']);
     });
 
 
