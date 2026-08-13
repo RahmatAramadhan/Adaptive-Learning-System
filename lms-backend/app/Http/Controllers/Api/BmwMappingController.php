@@ -35,6 +35,22 @@ class BmwMappingController extends Controller
             'Melanjutkan' => $melanjutkanScore,
             'Wirausaha'   => $wirausahaScore,
         ];
+
+        if ($bekerjaScore == 15 && $melanjutkanScore == 15 && $wirausahaScore == 15) {
+            return response()->json([
+                'message' => 'Wah, sepertinya kamu memilih "Ya" untuk semua pilihan. Yuk, coba lebih fokus pada hal yang paling sesuai dengan rencanamu dan isi dengan sungguh-sungguh!'
+            ], 422);
+        }
+
+        if ($bekerjaScore == 0 && $melanjutkanScore == 0 && $wirausahaScore == 0) {
+            return response()->json([
+                'message' => 'Skormu 0% di semua bidang! Pasti ada minimal satu arah karier yang kamu minati. Silakan baca dan isi ulang dengan sungguh-sungguh ya.'
+            ], 422);
+        }
+
+        $maxScore = max($scores);
+        $winners = array_keys($scores, $maxScore);
+        $dominantResult = implode(' & ', $winners);
         
         // Cari nilai tertinggi untuk menentukan yang paling dominan
         $maxScore = max($scores);
@@ -67,7 +83,7 @@ class BmwMappingController extends Controller
             ],
         ]);
     }
-    
+
     public function reset($studentId)
     {
         // Hapus data BMW milik user_id tersebut

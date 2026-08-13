@@ -102,17 +102,19 @@ export function BmwMapping() {
     setPhase('TRANSITION');
   };
 
-  const handleAnswerClosed = async (value: number) => {
+const handleAnswerClosed = async (value: number) => {
     const currentQ = closedQuestions[currentQIndex];
     
     const newAnswers = { ...closedAnswers, [currentQ.id]: value };
     setClosedAnswers(newAnswers);
 
-    if (currentQIndex < closedQuestions.length - 1) {
-      setCurrentQIndex(prev => prev + 1);
-    } else {
-      await submitAll(newAnswers);
-    }
+    setTimeout(async () => {
+      if (currentQIndex < closedQuestions.length - 1) {
+        setCurrentQIndex(prev => prev + 1);
+      } else {
+        await submitAll(newAnswers);
+      }
+    }, 150);
   };
 
   const submitAll = async (finalClosedAnswers: Record<string, number>) => {
@@ -126,8 +128,16 @@ export function BmwMapping() {
       toast.success(`Pemetaan selesai! Kecenderungan kamu: ${res.data.bmw_mapping.dominant_result}`);
       navigate('/student'); 
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Terjadi kesalahan saat menyimpan data.');
-      setCurrentQIndex(closedQuestions.length - 1); 
+      const errorMessage = err?.response?.data?.message ?? 'Terjadi kesalahan saat menyimpan data.';
+      
+      toast.error(errorMessage, { duration: 6000 });
+      
+      if (err?.response?.status === 422) {
+        setCurrentQIndex(0);        
+        setClosedAnswers({});         
+      } else {
+        setCurrentQIndex(closedQuestions.length - 1); 
+      }
     } finally {
       setLoading(false);
     }
@@ -270,7 +280,7 @@ export function BmwMapping() {
             <button
               disabled={loading}
               onClick={() => handleAnswerClosed(1)}
-              className="py-6 px-4 bg-slate-800 hover:bg-emerald-600 border-2 border-slate-700 hover:border-emerald-500 text-white text-xl font-bold rounded-2xl transition-all duration-200"
+              className="py-6 px-4 bg-slate-800 hover:bg-emerald-600 border-2 border-slate-700 hover:border-emerald-500 active:bg-emerald-700 active:border-emerald-600 active:scale-95 text-white text-xl font-bold rounded-2xl transition-all duration-150"
             >
               Ya, Sesuai
             </button>
@@ -278,7 +288,7 @@ export function BmwMapping() {
             <button
               disabled={loading}
               onClick={() => handleAnswerClosed(0)}
-              className="py-6 px-4 bg-slate-800 hover:bg-rose-600 border-2 border-slate-700 hover:border-rose-500 text-white text-xl font-bold rounded-2xl transition-all duration-200"
+              className="py-6 px-4 bg-slate-800 hover:bg-rose-600 border-2 border-slate-700 hover:border-rose-500 active:bg-rose-700 active:border-rose-600 active:scale-95 text-white text-xl font-bold rounded-2xl transition-all duration-150"
             >
               Tidak Sesuai
             </button>
