@@ -48,6 +48,7 @@ interface AuthContextType {
     email: string,
     password: string,
     password_confirmation: string,
+    class_id: string,
     role?: string
   ) => Promise<void>;
 
@@ -160,10 +161,9 @@ export function AuthProvider({
     email: string,
     password: string,
     password_confirmation: string,
+    class_id: string,
     role = 'siswa'
-  ) => {
-    // Ambil CSRF cookie sebelum request register
-    
+  ) => {   
 
     const res = await api.post(
       '/register',
@@ -172,6 +172,7 @@ export function AuthProvider({
         email,
         password,
         password_confirmation,
+        class_id,
         role,
       }
     );

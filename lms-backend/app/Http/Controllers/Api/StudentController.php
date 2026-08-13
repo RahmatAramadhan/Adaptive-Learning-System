@@ -23,6 +23,11 @@ class StudentController extends Controller
                 'name' => $student->name,
                 'email' => $student->email,
                 'learning_style' => $student->learningStyle?->result,
+                'learning_style_details' => $student->learningStyle ? [
+                    'visual_percentage'      => $student->learningStyle->visual_percentage,
+                    'auditory_percentage'    => $student->learningStyle->auditory_percentage,
+                    'kinesthetic_percentage' => $student->learningStyle->kinesthetic_percentage,
+                ] : null,
                 'class' => $student->class ? [
                     'id' => $student->class->id,
                     'name' => $student->class->name,

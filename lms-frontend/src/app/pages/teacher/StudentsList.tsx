@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, MoreHorizontal, ChevronDown, Eye, Headphones, Hand, Edit2, Trash2, X, Briefcase, Filter } from 'lucide-react';
+import { Search, MoreHorizontal, ChevronDown, Eye, Headphones, Hand, Edit2, Trash2, X, Briefcase, Filter, Compass} from 'lucide-react';
 import api from '../../../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router';
@@ -9,7 +9,11 @@ interface StudentItem {
   name: string;
   email: string;
   learning_style: string | null;
-
+  learning_style_details?: {
+    visual_percentage: number;
+    auditory_percentage: number;
+    kinesthetic_percentage: number;
+  } | null;
   class: {
     id: number;
     name: string;
@@ -43,6 +47,7 @@ export function StudentsList() {
   const [deleteStudent, setDeleteStudent] = useState<StudentItem | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [detailStyleStudent, setDetailStyleStudent] = useState<StudentItem | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -407,6 +412,18 @@ export function StudentsList() {
                             </button>
                           )}
 
+                          {student.learning_style_details && (
+                            <button
+                              onClick={() => { 
+                                setDetailStyleStudent(student); 
+                                setOpenMenu(null); 
+                              }}
+                              className="flex items-center gap-2 px-4 py-3 w-full hover:bg-indigo-50 text-indigo-700 font-medium transition-colors text-sm border-b border-slate-100"
+                            >
+                              <Compass className="w-4 h-4" /> Detail Gaya Belajar
+                            </button>
+                          )}
+
                           <button
                             onClick={() => { setEditStudent(student); setOpenMenu(null); }}
                             className="flex items-center gap-2 px-4 py-3 w-full hover:bg-slate-50 text-slate-700 font-medium transition-colors text-sm border-b border-slate-100"
@@ -455,6 +472,12 @@ export function StudentsList() {
             onClose={() => setShowAddModal(false)}
             onSubmit={handleAddStudent}
             isLoading={isLoading}
+          />
+        )}
+        {detailStyleStudent && (
+          <LearningStyleDetailModal
+            student={detailStyleStudent}
+            onClose={() => setDetailStyleStudent(null)}
           />
         )}
       </AnimatePresence>
@@ -546,6 +569,55 @@ function AddStudentModal({ onClose, onSubmit, isLoading }: any) {
           <div><label className="block text-sm font-medium text-slate-700 mb-2">Password</label><input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required minLength={8} /></div>
           <div className="flex gap-2 pt-4"><button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50" disabled={isLoading}>Cancel</button><button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700" disabled={isLoading}>{isLoading ? 'Creating...' : 'Create Student'}</button></div>
         </form>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function LearningStyleDetailModal({ student, onClose }: any) {
+  const details = student.learning_style_details;
+  if (!details) return null;
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center px-4" onClick={onClose}>
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-6">
+        
+        <div className="text-center">
+          <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Compass className="w-6 h-6" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900">Gaya Belajar</h3>
+          <p className="text-sm text-slate-500 mt-1">{student.name}</p>
+        </div>
+
+        <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-center">
+          <span className="text-xs uppercase tracking-wider text-indigo-500 font-bold">Kecenderungan</span>
+          <h4 className="text-2xl font-extrabold text-indigo-700 uppercase mt-1">
+            {student.learning_style}
+          </h4>
+        </div>
+
+        <div className="space-y-2 text-sm text-slate-600">
+          <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50">
+            <span>Visual</span>
+            <span className="font-bold">{details.visual_percentage}%</span>
+          </div>
+          <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50">
+            <span>Auditori</span>
+            <span className="font-bold">{details.auditory_percentage}%</span>
+          </div>
+          <div className="flex justify-between items-center p-2 rounded-lg bg-slate-50">
+            <span>Kinestetik</span>
+            <span className="font-bold">{details.kinesthetic_percentage}%</span>
+          </div>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-full py-2.5 bg-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 transition"
+        >
+          Tutup
+        </button>
       </motion.div>
     </motion.div>
   );

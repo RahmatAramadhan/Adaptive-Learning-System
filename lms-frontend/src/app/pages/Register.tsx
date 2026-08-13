@@ -1,26 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { useAuth } from '../context/AuthContext';
+import api from '@/lib/api';
 import { toast } from 'sonner';
 
 export function Register() {
   const { register } = useAuth();
   const navigate     = useNavigate();
+  
+  // Tambahkan class_id di state form
   const [form, setForm] = useState({
-    name: '', email: '', password: '', password_confirmation: '',
+    name: '', email: '', password: '', password_confirmation: '', class_id: ''
   });
+  
+  const [classes, setClasses] = useState<{id: number, name: string}[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
+
+  // Fetch daftar kelas saat halaman dimuat
+  useEffect(() => {
+    api.get('/classes/available')
+      .then(res => setClasses(res.data))
+      .catch(err => console.error("Gagal memuat kelas", err));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
     if (form.password !== form.password_confirmation) {
       setError('Konfirmasi password tidak cocok.'); return;
     }
+    
+    if (!form.class_id) {
+      setError('Silakan pilih kelas terlebih dahulu.'); return;
+    }
+
     setLoading(true);
     try {
-      await register(form.name, form.email, form.password, form.password_confirmation);
+      // Kirim class_id ke fungsi register
+      await register(form.name, form.email, form.password, form.password_confirmation, form.class_id);
       toast.success('Registrasi berhasil!');
       navigate('/');
     } catch (err: any) {
@@ -76,6 +95,22 @@ export function Register() {
               className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 focus:bg-white transition-colors"
               placeholder="email@sekolah.sch.id"
             />
+          </div>
+
+          {/* Opsi Pemilihan Kelas */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Pilih Kelas</label>
+            <select
+              required
+              value={form.class_id}
+              onChange={e => setForm({ ...form, class_id: e.target.value })}
+              className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 focus:bg-white transition-colors"
+            >
+              <option value="">-- Pilih Kelas --</option>
+              {classes.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
 
           <div>

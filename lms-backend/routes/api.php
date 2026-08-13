@@ -19,6 +19,7 @@ Route::options('{any}', function () {
 // ── Public routes ────────────────────────────────────────────────────────────
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
+Route::get('/classes/available', [ClassController::class, 'available']);
 
 // ── Protected routes ─────────────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
@@ -45,7 +46,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/courses/{id}',    [CourseController::class, 'show']);
 
     // ── Class Selection (siswa) ──────────────────────────────────────────────
-    Route::get('/classes/available', [ClassController::class, 'available']);
     Route::put('/my-class',          [StudentController::class, 'selectClass']);
 
     // Guru only

@@ -13,45 +13,33 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+        // 1. Tambahkan validasi class_id
         $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users',
             'password' => 'required|min:6|confirmed',
+            'class_id' => 'required|exists:classes,id',
         ]);
 
-
+        // 2. Simpan class_id ke database
         $user = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
             'role'     => 'siswa',
+            'class_id' => $request->class_id, 
         ]);
-
 
         $token = $user
             ->createToken('auth_token')
             ->plainTextToken;
 
-
         return response()->json([
-
-            'token' =>
-                $token,
-
-            'user' =>
-                $this->formatUser($user),
-
-            'need_class_selection' =>
-                $user->role === 'siswa'
-                && $user->class_id === null
-                && SchoolClass::count() > 0,
-
+            'token' => $token,
+            'user' => $this->formatUser($user),
+            'need_class_selection' => false, // Set false karena sudah pilih kelas di awal
         ], 201);
     }
-
-
-
-
 
     public function login(Request $request)
     {
