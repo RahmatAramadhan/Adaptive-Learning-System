@@ -1,7 +1,7 @@
 import React from 'react';
 import { useData } from '../../context/DataContext';
 import { Link } from 'react-router';
-import { BookOpen, PlayCircle, Clock, Eye, Headphones, Hand, HelpCircle } from 'lucide-react';
+import { BookOpen, PlayCircle, Clock, Eye, Headphones, Hand, HelpCircle, Layers } from 'lucide-react';
 import { AlertBanner } from '../../components/AlertBanner';
 import { useAuth } from '../../context/AuthContext';
 
@@ -9,6 +9,7 @@ const styleIcons = {
   visual: { icon: Eye, label: 'Visual', color: 'from-blue-500 to-blue-600' },
   auditori: { icon: Headphones, label: 'Auditory', color: 'from-purple-500 to-purple-600' },
   kinestetik: { icon: Hand, label: 'Kinesthetic', color: 'from-orange-500 to-orange-600' },
+  multimodal: { icon: Layers, label: 'Multimodal', color: 'from-teal-500 to-teal-600' },
   belum_diisi: { icon: HelpCircle, label: 'Belum Mengisi', color: 'from-slate-400 to-slate-500' },
 };
 
@@ -17,9 +18,14 @@ export function StudentDashboard() {
 
   const { currentUser } = useAuth();
 
-  const studentStyle = (currentUser?.learning_style?.result || 'belum_diisi') as keyof typeof styleIcons;
-  const styleInfo = styleIcons[studentStyle];
+  const rawResult = currentUser?.learning_style?.result || 'belum_diisi';
+  const isMultimodal = rawResult.includes('&');
+  const styleKey = isMultimodal ? 'multimodal' : rawResult.toLowerCase();
+  const styleInfo = styleIcons[styleKey as keyof typeof styleIcons] || styleIcons['belum_diisi'];
   const StyleIcon = styleInfo.icon;
+
+  // Gunakan teks asli dari database jika hasilnya campuran
+  const displayLabel = isMultimodal ? rawResult : styleInfo.label;
 
   // Calculate completion percentage for each course
   const getCourseProgress = (courseId: string) => {
@@ -67,7 +73,7 @@ export function StudentDashboard() {
                 Your Learning Style
               </p>
               <p className="text-sm font-bold">
-                {styleInfo.label}
+                {displayLabel}
               </p>
             </div>
           </div>

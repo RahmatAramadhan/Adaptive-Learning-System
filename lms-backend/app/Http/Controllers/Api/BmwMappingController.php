@@ -38,7 +38,8 @@ class BmwMappingController extends Controller
         
         // Cari nilai tertinggi untuk menentukan yang paling dominan
         $maxScore = max($scores);
-        $dominantResult = array_keys($scores, $maxScore)[0];
+        $winners = array_keys($scores, $maxScore);
+        $dominantResult = implode(' / ', $winners);
 
         $user = $request->user();
 

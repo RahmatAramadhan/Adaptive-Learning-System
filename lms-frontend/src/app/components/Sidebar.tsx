@@ -42,8 +42,6 @@ export function Sidebar() {
     });
   };
 
-  const isSenior = currentUser.class?.grade === 'XI' || currentUser.class?.grade === 'XII';
-
   const handleLearningClick = () => {
     if (currentUser.has_learning_style) {
       setShowLearningModal(true);
@@ -133,16 +131,14 @@ export function Sidebar() {
                 onClick={handleLearningClick}
                 isCompleted={currentUser.has_learning_style}
               />
-
-              {isSenior && (
-                <SidebarActionItem
-                  icon={Briefcase}
-                  label="Pemetaan BMW"
-                  collapsed={collapsed}
-                  onClick={handleBmwClick}
-                  isCompleted={(currentUser as any).has_bmw_mapping}
-                />
-              )}
+              <SidebarActionItem
+                icon={Briefcase}
+                label="Pemetaan BMW"
+                collapsed={collapsed}
+                onClick={handleBmwClick}
+                isCompleted={(currentUser as any).has_bmw_mapping}
+              />
+            
             </>
           )}
 

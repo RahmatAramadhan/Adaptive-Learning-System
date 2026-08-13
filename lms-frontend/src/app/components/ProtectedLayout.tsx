@@ -78,7 +78,6 @@ export function ProtectedLayout() {
   const needsBmw = !(currentUser as any)?.has_bmw_mapping;
 
   const showAssessmentModal = isStudent && hasClass && needsLearningStyle && needsBmw;
-  const isSenior = currentUser?.class?.grade === 'XI' || currentUser?.class?.grade === 'XII';
 
   return (
     <>
@@ -146,9 +145,6 @@ export function ProtectedLayout() {
                 </svg>
                 Isi Kuesioner Gaya Belajar
               </button>
-
-              {/* Opsi 2: BMW (Hanya untuk Kelas XI dan XII) */}
-              {isSenior && (
                 <>
                   <div className="relative flex items-center py-2">
                     <div className="flex-grow border-t border-slate-200"></div>
@@ -166,7 +162,6 @@ export function ProtectedLayout() {
                     Isi Pemetaan BMW
                   </button>
                 </>
-              )}
             </div>
           </div>
         </div>

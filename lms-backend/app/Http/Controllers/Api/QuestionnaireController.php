@@ -46,9 +46,15 @@ class QuestionnaireController extends Controller
         $aP     = round(($auditory    / $total) * 100, 2);
         $kP     = round(($kinesthetic / $total) * 100, 2);
 
-        $result = 'Visual';
-        if ($aP > $vP && $aP > $kP) $result = 'Auditori';
-        if ($kP > $vP && $kP > $aP) $result = 'Kinestetik';
+        $scores = [
+            'Visual'     => $vP,
+            'Auditori'   => $aP,
+            'Kinestetik' => $kP,
+        ];
+        
+        $maxScore = max($scores);
+        $winners = array_keys($scores, $maxScore);
+        $result = implode(' & ', $winners);
 
         $user  = $request->user();
 
